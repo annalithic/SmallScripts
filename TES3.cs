@@ -8,7 +8,7 @@ using System.Linq;
 namespace SmallScripts {
 	static class TES3 {
 
-		static void MWBooks(string espPath) {
+		public static void MWBooks(string espPath) {
 			JArray esp = JArray.Parse(File.ReadAllText(espPath));
 			for (int i = 0; i < esp.Count; i++) {
 				if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Book") {
