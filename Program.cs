@@ -6,10 +6,13 @@ using System.Linq;
 namespace SmallScripts {
 	class Program {
 		static void Main(string[] args) {
+
+			TES3.MWTesAnnwynColorMap();
+
 			//HashSet<string> bgsbooks = new HashSet<string>(File.ReadAllLines(@"E:\Anna\Desktop\bgsbooksnew.txt"));
-			HashSet<string> a = new HashSet<string>(File.ReadAllLines(@"E:\Anna\Desktop\uespbook\tes5.txt"));
+			//HashSet<string> a = new HashSet<string>(File.ReadAllLines(@"E:\Anna\Desktop\uespbook\tes5.txt"));
 			//HashSet<string> b = new HashSet<string>(File.ReadAllLines(@"E:\Anna\Desktop\templorespacebooksfromtable.txt"));
-			foreach (string line in File.ReadAllLines(@"E:\Anna\Desktop\tes5lorespacetemp.txt")) if (!a.Contains(line)) Console.WriteLine(line);
+			//foreach (string line in File.ReadAllLines(@"E:\Anna\Desktop\tes5lorespacetemp.txt")) if (!a.Contains(line)) Console.WriteLine(line);
 			//foreach (string line in File.ReadAllLines(@"E:\Anna\Desktop\c.txt")) if (!b.Contains(line)) Console.WriteLine(line);
 
 			//using (TextWriter w = new StreamWriter(File.Create(@"E:\Anna\Desktop\bgsbooks2.txt"))) {

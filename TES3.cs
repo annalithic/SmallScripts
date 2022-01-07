@@ -8,6 +8,81 @@ using System.Linq;
 namespace SmallScripts {
 	static class TES3 {
 
+		public static void MWTesAnnwynColorMap() {
+			Dictionary<MagickColor, MagickColor> colorMap = new Dictionary<MagickColor, MagickColor>();
+			colorMap[MagickColors.Black] = new MagickColor(4279, 2360, 1103);
+
+			string[] lines = File.ReadAllLines(@"F:\Extracted\BethesdaGameStudioUtils\TESAnnwyn\tesannwyn-ltex3.dat");
+
+			MagickImage defaultLand = new MagickImage(@"E:\Programs\Steam\steamapps\common\Morrowind\Data Files\textures\_land_default.tga");
+			defaultLand.Resize(1, 1);
+			MagickColor defaultColor = (MagickColor)defaultLand.GetPixels().GetPixel(0, 0).ToColor();
+			colorMap[MagickColors.Black] = defaultColor;
+
+
+			foreach (string line in lines) {
+				string[] words = line.Split(',');
+				if (words.Length < 4) continue;
+
+				string texname = words[2].ToLower().Replace(".tga", ".dds");
+				if (File.Exists(@"F:\Extracted\Morrowind\textures\" + texname)) {
+					MagickImage image = new MagickImage(@"F:\Extracted\Morrowind\textures\" + texname);
+
+					image.Resize(1, 1);
+					ushort g = (ushort) (byte.Parse(words[0]) * 256);
+					//g++;
+					MagickColor c1 = new MagickColor(g, g, g);
+					MagickColor c2 = (MagickColor)image.GetPixels().GetPixel(0, 0).ToColor();
+					colorMap[c1] = c2;
+					Console.WriteLine($"{c1.R} {c1.G} {c1.B} - {c2.R} {c2.G} {c2.B} - {texname}");
+					//Console.WriteLine($"{words[0]} {texname} {color.R} {color.G} {color.B}");
+				}
+			}
+
+
+			BinaryReader r = new BinaryReader(File.OpenRead(@"F:\Extracted\BethesdaGameStudioUtils\TESAnnwyn\tesannwyn-vtex3.bmp"));
+			r.BaseStream.Seek(18, SeekOrigin.Begin);
+			int width = r.ReadInt32();
+			int height = r.ReadInt32();
+			
+			PixelReadSettings pixelRead = new PixelReadSettings(width, height, StorageType.Short, "R");
+
+			r.BaseStream.Seek(54, SeekOrigin.Begin);
+			byte[] data = r.ReadBytes(2 * width * height);
+
+			for (byte i = 0; i < 107; i++) data[i * 2] = (byte) (i + 1);
+
+			r.Close();
+			MagickImage map = new MagickImage(data, pixelRead);
+			map.Flip();
+			map.Evaluate(Channels.All, EvaluateOperator.Multiply, 256);
+			//map.Depth = 8;
+			//map.ColorSpace = ColorSpace.RGB;
+			//map.Format = MagickFormat.Rgb;
+
+			Console.WriteLine(map.Depth);
+			Console.WriteLine(map.Format);
+
+			//map.Write(@"F:\Extracted\BethesdaGameStudioUtils\TESAnnwyn\tesannwyn-vtex3-recolor.png");
+			//map.Depth = 8; map.Format = MagickFormat.Rgb;
+
+			//MagickReadSettings colorReadSettings = new MagickReadSettings { Format = MagickFormat.Rgb, Depth = 16, Width = width, Height = height };
+			MagickImage colorImage = new MagickImage(MagickColors.Red, width, height);
+			colorImage.Composite(map);
+
+			colorImage.ColorFuzz = new Percentage(0);
+			foreach (var color in colorMap.Keys) {
+				colorImage.Opaque(color, colorMap[color]);
+			}
+			colorImage.Write(@"F:\Extracted\BethesdaGameStudioUtils\TESAnnwyn\tesannwyn-vtex3-recolor.png");
+
+
+
+
+
+
+		}
+
 		public static void MWBooks(string espPath) {
 			JArray esp = JArray.Parse(File.ReadAllText(espPath));
 			for (int i = 0; i < esp.Count; i++) {
