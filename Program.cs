@@ -7,7 +7,8 @@ namespace SmallScripts {
 	class Program {
 		static void Main(string[] args) {
 
-			TES3.MWTesAnnwynColorMap();
+			V3.RandomiseInterestGroups();
+			//TES3.MWTesAnnwynColorMap();
 
 			//HashSet<string> bgsbooks = new HashSet<string>(File.ReadAllLines(@"E:\Anna\Desktop\bgsbooksnew.txt"));
 			//HashSet<string> a = new HashSet<string>(File.ReadAllLines(@"E:\Anna\Desktop\uespbook\tes5.txt"));
