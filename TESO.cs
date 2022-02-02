@@ -1,4 +1,5 @@
 ﻿using ImageMagick;
+using ImageMagick.Formats;
 //using ImageMagick.Formats.Dds;
 using System;
 using System.Collections.Generic;
@@ -14,12 +15,12 @@ namespace SmallScripts {
 			MagickImage fullMap = new MagickImage(path);
 			var images = fullMap.CropToTiles(fullMap.Width / size, fullMap.Width / size);
 			int i = 0;
-			//var defines = new DdsWriteDefines() { Compression = DdsCompression.None, Mipmaps = 0 };
+			var defines = new DdsWriteDefines() { Compression = DdsCompression.None, Mipmaps = 0 };
 			foreach (var image in images) {
 				image.Format = MagickFormat.Dds;
 				//image.SetCompression(CompressionMethod.NoCompression);
 				image.Alpha(AlphaOption.On);
-				//image.Settings.SetDefines(defines);
+				image.Settings.SetDefines(defines);
 				string fileName = Path.GetFileNameWithoutExtension(path) + "_" + i.ToString() + ".dds";
 				Console.WriteLine(fileName);
 				image.Write(Path.GetDirectoryName(path) + "\\" + fileName);

@@ -7,7 +7,9 @@ namespace SmallScripts {
 	class Program {
 		static void Main(string[] args) {
 
-			V3.RandomiseInterestGroups();
+			PoE.UniqueList();
+			//PoE.NativeMonsters();
+			//V3.RandomiseInterestGroups();
 			//TES3.MWTesAnnwynColorMap();
 
 			//HashSet<string> bgsbooks = new HashSet<string>(File.ReadAllLines(@"E:\Anna\Desktop\bgsbooksnew.txt"));
@@ -28,7 +30,7 @@ namespace SmallScripts {
 			//TES3.MWBooks(@"F:\Extracted\Morrowind\tribunal.json");
 			//Console.WriteLine();
 			//TES3.MWBooks(@"F:\Extracted\Morrowind\bloodmoon.json");
-			//TESO.CreateTileMap(@"F:\Extracted\ESO\mapmod\Tamriel.png", 4);
+			//TESO.CreateTileMap(@"F:\Extracted\ESO\mapmod\tamriel.png", 4);
 			//TESO.CreateTileMap(@"F:\Extracted\ESO\mapmod\blackwood_base.png", 4);
 			//TESO.CreateTileMap(@"F:\Extracted\ESO\mapmod\westernskryim_base.png", 4);
 			//TESO.CreateTileMap(@"F:\Extracted\ESO\mapmod\southernelsweyr_base.png", 4);
