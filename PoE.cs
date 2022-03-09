@@ -6,6 +6,21 @@ using Util;
 namespace SmallScripts {
 	static class PoE {
 		
+		public static void MapTopologies() {
+			Dictionary<int, string> topologyNames = new Dictionary<int, string>();
+			foreach(string line in File.ReadAllLines(@"F:\Extracted\PathOfExile\3.16.Scourge\topologies.txt")) {
+				string[] words = line.Split('\t');
+				topologyNames[int.Parse(words[0])] = words[2];
+            }
+
+			foreach (string line in File.ReadAllLines(@"F:\Extracted\PathOfExile\3.16.Scourge\maps.txt")) {
+				string[] words = line.Split('\t');
+				Console.Write($"{words[0]} {words[1]}");
+				foreach (int id in ReadIdArray(words[15])) Console.Write(" " + (topologyNames.ContainsKey(id) ? topologyNames[id] : id.ToString()));
+				Console.WriteLine();
+			}
+        }
+
 		public static void UniqueList() {
 			string[] uniqueStashTypes = new string[]{
 				"Flask", "Amulet", "Ring", "Claw", "Dagger", "Wand", "Sword", "Axe", "Mace", "Bow", "Staff", "Quiver", 
@@ -21,17 +36,17 @@ namespace SmallScripts {
             }
 
 
-			string[] words = File.ReadAllLines(@"F:\Extracted\PathOfExile\3.16.Scourge\Words.csv");
+			string[] words = File.ReadAllLines(@"F:\Extracted\PathOfExile\3.17.Siege\Words.csv");
 			for(int i = 0; i < words.Length - 1; i++) {
 				words[i] = words[i + 1].Split('\t')[1];
 			}
 
-			string[] visualIdentities = File.ReadAllLines(@"F:\Extracted\PathOfExile\3.16.Scourge\ItemVisualIdentity.csv");
+			string[] visualIdentities = File.ReadAllLines(@"F:\Extracted\PathOfExile\3.17.Siege\ItemVisualIdentity.csv");
 			for (int i = 0; i < visualIdentities.Length - 1; i++) {
 				visualIdentities[i] = visualIdentities[i + 1].Split('\t')[1];
 			}
 
-			string[] txtUniques = File.ReadAllLines(@"F:\Extracted\PathOfExile\3.16.Scourge\UniqueStashLayout.csv");
+			string[] txtUniques = File.ReadAllLines(@"F:\Extracted\PathOfExile\3.17.Siege\UniqueStashLayout.csv");
 
 
 			string[] uniqueNames = new string[txtUniques.Length - 1];
@@ -59,34 +74,54 @@ namespace SmallScripts {
 
 		public static void NativeMonsters() {
 
-			string[] txtWorldAreas = File.ReadAllLines(@"F:\Extracted\PathOfExile\3.16.Scourge\WorldAreas.csv");
-			string[] worldAreas = new string[txtWorldAreas.Length - 1];
-			string[] worldAreaNames = new string[txtWorldAreas.Length - 1];
-			for (int i = 0; i < txtWorldAreas.Length - 1; i++) {
-				string[] words = txtWorldAreas[i + 1].Split('\t');
-				worldAreas[i] = words[0];
-				worldAreaNames[i] = words[1];
-			}
+			//string[] txtWorldAreas = File.ReadAllLines(@"F:\Extracted\PathOfExile\3.16.Scourge\WorldAreas.csv");
+			//string[] worldAreas = new string[txtWorldAreas.Length - 1];
+			//string[] worldAreaNames = new string[txtWorldAreas.Length - 1];
+			//for (int i = 0; i < txtWorldAreas.Length - 1; i++) {
+			//	string[] words = txtWorldAreas[i + 1].Split('\t');
+			//	worldAreas[i] = words[0];
+			//	worldAreaNames[i] = words[1];
+			//}
 
-			string[] txtMonsterTypes = File.ReadAllLines(@"F:\Extracted\PathOfExile\3.16.Scourge\MonsterTypes.csv");
-			string[] monsterTypes = new string[txtMonsterTypes.Length - 1];
-			for (int i = 0; i < txtMonsterTypes.Length - 1; i++) {
-				monsterTypes[i] = txtMonsterTypes[i + 1].Substring(0, txtMonsterTypes[i+1].IndexOf('\t'));
-			}
+			string[] tags = File.ReadAllLines(@"E:\Extracted\PathOfExile\3.17.Siege\Tags.csv");
+			for (int i = 0; i < tags.Length - 1; i++) tags[i] = tags[i + 1].Substring(0, tags[i+1].IndexOf('\t'));
 
-			string[] txtMonsterVarieties = File.ReadAllLines(@"F:\Extracted\PathOfExile\3.16.Scourge\MonsterVarieties.csv");
 
-			string[] monsterVarieties = new string[txtMonsterVarieties.Length - 1];
-			string[] monsterVarietyNames = new string[txtMonsterVarieties.Length - 1];
-			int[] monsterVarietyTypes = new int[txtMonsterVarieties.Length - 1];
+			string[] monsterTypes = File.ReadAllLines(@"E:\Extracted\PathOfExile\3.17.Siege\MonsterTypes.csv");
+			for (int i = 0; i < monsterTypes.Length - 1; i++) monsterTypes[i] = monsterTypes[i + 1].Substring(0, monsterTypes[i+1].IndexOf('\t'));
+			List<string>[] monsterTypeVarieties = new List<string>[monsterTypes.Length];
+
+			string[] txtMonsterVarieties = File.ReadAllLines(@"E:\Extracted\PathOfExile\3.17.Siege\MonsterVarieties.csv");
+			//string[] monsterVarieties = new string[txtMonsterVarieties.Length - 1];
+			//string[] monsterVarietyNames = new string[txtMonsterVarieties.Length - 1];
+			//int[] monsterVarietyTypes = new int[txtMonsterVarieties.Length - 1];
 
 			for (int i = 1; i < txtMonsterVarieties.Length - 1; i++) {
 				string[] words = txtMonsterVarieties[i + 1].Split('\t');
-				monsterVarieties[i] = words[0].Substring(18);
-				monsterVarietyNames[i] = words[32];
-				monsterVarietyTypes[i] = int.Parse(words[1].Substring(1, words[1].IndexOf(',') - 1));
+				//monsterVarieties[i] = words[0].Substring(18);
+				//monsterVarietyNames[i] = words[32];
+
+				int type = ReadId(words[1]);
+				if (monsterTypeVarieties[type] == null) monsterTypeVarieties[type] = new List<string>();
+				monsterTypeVarieties[type].Add($"|{words[0].Substring(18)} ({words[32]})");
+
+				//string type = monsterTypes[ReadId(words[1])];
+				//Console.WriteLine($"{words[0]}|{words[7]}|{words[32]}|{type}|{words[46]}|{words[70]}|{words[72]}|{words[73]}|{words[74]}|{words[82]}|{words[83]}|{words[85]}");
+				
+				
+				//foreach (int id in ReadIdArray(words[19])) Console.Write($"{tags[id]}, ");
+				//Console.WriteLine();
+				//monsterVarietyTypes[i] = int.Parse(words[1].Substring(1, words[1].IndexOf(',') - 1));
 			}
 
+			for(int i = 0; i < monsterTypes.Length; i++) {
+				Console.Write($"{i}|{monsterTypes[i]}");
+				if (monsterTypeVarieties[i] != null)
+					for (int v = 0; v < Math.Min(monsterTypeVarieties[i].Count, 10); v++)
+						Console.Write(monsterTypeVarieties[i][v]);
+				Console.WriteLine();
+            }
+			/*
 			string[] txtMonsterPacks = File.ReadAllLines(@"F:\Extracted\PathOfExile\3.16.Scourge\MonsterPacks.csv");
 			string[] monsterPacks = new string[txtMonsterPacks.Length - 1];
 			List<int>[] worldAreaPacks = new List<int>[worldAreas.Length];
@@ -102,6 +137,8 @@ namespace SmallScripts {
 				if (worldAreaPacks[i] != null) foreach (int id in worldAreaPacks[i]) Console.Write($"|{monsterPacks[id]}");
 				Console.WriteLine();
             }
+			*/
+			
 
 			//for (int i = 1000; i < 1500; i++) Console.WriteLine($"{monsterVarieties[i]} | {monsterVarietyNames[i]} | {monsterTypes[monsterVarietyTypes[i]]}");
         }
@@ -111,17 +148,28 @@ namespace SmallScripts {
 			return int.Parse(word.Substring(start, word.IndexOf(',') - start));
 		}
 
+		static int[] ReadIdArray(string word) {
+			if (!word.StartsWith("[")) return null;
+			List<int> ids = new List<int>();
+			string[] words = word.Split('<');
+			for (int i = 1; i < words.Length; i++) {
+				ids.Add(int.Parse(words[i].Substring(0, words[i].IndexOf(','))));
+            }
+
+			return ids.ToArray();
+        }
+
 		static void SMDToObj(string inPath) {
 			using(BinaryReader r = new BinaryReader(File.Open(inPath, FileMode.Open))) {
 				SMD smd = new SMD(r);
 			}
 		}
-		static void POEMonsterTypes() {
-			string[] lines = File.ReadAllLines(@"F:\Extracted\PathOfExile\3.15.Expedition\MonsterTypes.csv");
+		public static void MonsterTypes() {
+			string[] lines = File.ReadAllLines(@"F:\Extracted\PathOfExile\3.17.Siege\MonsterTypes.csv");
 			string[] monsterTypes = new string[lines.Length - 1];
 			for (int i = 0; i < monsterTypes.Length; i++) monsterTypes[i] = lines[i + 1].Substring(0, lines[i + 1].IndexOf(','));
 
-			lines = File.ReadAllLines(@"F:\Extracted\PathOfExile\3.15.Expedition\MonsterVarieties.csv");
+			lines = File.ReadAllLines(@"F:\Extracted\PathOfExile\3.17.Siege\MonsterVarieties.csv");
 			string[] monsterVarietyIDs = new string[lines.Length - 1];
 			string[] monsterVarietyNames = new string[lines.Length - 1];
 			int[] monsterVarietyTypes = new int[lines.Length - 1];
