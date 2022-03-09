@@ -7,7 +7,10 @@ namespace SmallScripts {
 	class Program {
 		static void Main(string[] args) {
 
-			PoE.UniqueList();
+			Souls.EldenRingBossList();
+			//Souls.EldenRingUnpackTex(@"E:\Extracted\Souls\Elden Ring\menu\hi\00_solo-tpfbhd\00_Solo");
+			//Souls.EldenRingMapCompose();
+			//PoE.NativeMonsters();
 			//PoE.NativeMonsters();
 			//V3.RandomiseInterestGroups();
 			//TES3.MWTesAnnwynColorMap();
@@ -71,7 +74,7 @@ namespace SmallScripts {
 			*/
 			//Warframe.TOC toc = new Warframe.TOC(@"C:\Games\Steam\steamapps\common\Warframe\Cache.Windows\B.Misc.toc");
 			//toc.Print();
-		}
+			}
 
 		static void MHIconRenames2() {
 			string[] names = Directory.EnumerateFiles(@"D:\Extracted\MH5R\game\romfs\re_chunk_000\natives\NSW\gui\80_Texture\boss_icon", "*.png").ToArray();
