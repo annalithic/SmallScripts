@@ -7,6 +7,21 @@ using ImageMagick;
 namespace SmallScripts {
     class Souls {
 
+        public static void EldenRingLegacyMapConv() {
+            Dictionary<string, string> mapNames = new Dictionary<string, string>();
+            foreach (string line in File.ReadAllLines(@"E:\Extracted\Souls\Elden Ring\mapnames.txt")) {
+                string[] words = line.Split(':');
+                mapNames[words[0]] = words[1];
+            }
+            foreach(string line in File.ReadAllLines(@"E:\Extracted\Souls\Elden Ring\legacyconv.txt")) {
+                string[] words = line.Split('\t');
+                string a = mapNames.ContainsKey(words[0]) ? mapNames[words[0]] : words[0];
+                string b = mapNames.ContainsKey(words[1]) ? mapNames[words[1]] : words[1];
+                Console.WriteLine(a + "|" + b);
+            }
+
+        }
+
         public static void EldenRingBossList() {
             Dictionary<string, string> mapNames = new Dictionary<string, string>();
             foreach(string line in File.ReadAllLines(@"E:\Extracted\Souls\Elden Ring\mapnames.txt")) {
@@ -30,6 +45,44 @@ namespace SmallScripts {
             //    File.Move(path, Path.GetDirectoryName(path) + "\\" + Path.GetFileName(path).Substring(13));
             //}
            
+        }
+
+        public static void EldenRingMapCompose3() {
+            HashSet<uint> vals = new HashSet<uint>();
+            foreach (string tex in Directory.EnumerateFiles(@"E:\Extracted\Souls\Elden Ring\mapextra\under\l1\png", "*.png", SearchOption.TopDirectoryOnly)) {
+                string[] words = Path.GetFileNameWithoutExtension(tex).Split('_');
+                uint val = uint.Parse(words[4], System.Globalization.NumberStyles.HexNumber);
+                vals.Add(val);
+            }
+            foreach (uint val in vals) EldenRingMapCompose2(val);
+        }
+
+        public static void EldenRingMapCompose2(uint searchVal) {
+
+            Console.WriteLine(searchVal);
+
+            int tiles = 41;
+            int tileSize = 256;
+            MagickImage image = new MagickImage(MagickColors.Black, tiles * tileSize, tiles * tileSize);
+            
+
+            foreach (string tex in Directory.EnumerateFiles(@"E:\Extracted\Souls\Elden Ring\mapextra\under\l0\png", "*.png", SearchOption.TopDirectoryOnly)) {
+                
+                string[] words = Path.GetFileNameWithoutExtension(tex).Split('_');
+                uint x = ushort.Parse(words[2]); uint y = uint.Parse(words[3]); uint lookup = x + (y << 16);
+                uint val = uint.Parse(words[4], System.Globalization.NumberStyles.HexNumber);
+                if (val != searchVal) continue;
+                Console.WriteLine(Path.GetFileName(tex));
+                MagickImage tile = new MagickImage(tex);
+                image.Draw(new Drawables().Composite(
+                    x * 256,
+                    image.Height - y * 256 - 256,
+                    tile
+                    ));
+            }
+            Console.WriteLine("Writing...");
+            image.Write($@"E:\Extracted\Souls\Elden Ring\undergroundmaps\L0_{searchVal}.tga");
+
         }
 
         public static void EldenRingMapCompose() {

@@ -7,7 +7,7 @@ namespace SmallScripts {
 	class Program {
 		static void Main(string[] args) {
 
-			Souls.EldenRingBossList();
+			Souls.EldenRingMapCompose3();
 			//Souls.EldenRingUnpackTex(@"E:\Extracted\Souls\Elden Ring\menu\hi\00_solo-tpfbhd\00_Solo");
 			//Souls.EldenRingMapCompose();
 			//PoE.NativeMonsters();
