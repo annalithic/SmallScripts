@@ -7,6 +7,35 @@ using ImageMagick;
 namespace SmallScripts {
     class Souls {
 
+        public static void EldenRingUpdateListNewMapParts() {
+            foreach (string path in File.ReadAllLines(@"E:\Extracted\Souls\Elden Ring\1_0_3_changedmaps.txt")) {
+                HashSet<string> oldParts = new HashSet<string>();
+                foreach (string line in File.ReadAllLines(path.Replace("\\mapstudio\\", "\\mapstudio1.02\\"))) oldParts.Add(line.Substring(0, line.IndexOf('|')));
+                foreach (string line in File.ReadAllLines(path)) {
+                    string[] words = line.Split('|');
+                    if (!oldParts.Contains(words[0])) Console.WriteLine($"{Path.GetFileNameWithoutExtension(path)}.msb | {words[0]} | &{words[1]} | ({words[2]},{words[3]},{words[4]})");
+                }
+            }
+        }
+        public static void EldenRingListUnusedMapPieces() {
+            
+
+            HashSet<string> mapPieces = new HashSet<string>();
+
+            foreach (string line in File.ReadAllLines(@"E:\Extracted\Souls\Elden Ring\mapbnds.txt")) mapPieces.Add(line);
+
+            foreach(string path in Directory.EnumerateFiles(@"E:\Extracted\Souls\Elden Ring\mapstudio\", "*.txt")) {
+                foreach(string line in File.ReadAllLines(path)) {
+                    if (line[line.IndexOf('|') + 1] != '0') continue;
+                    mapPieces.Remove(Path.GetFileNameWithoutExtension(path) + '_' + line.Substring(1, line.IndexOf('_') - 1));
+                }
+
+            }
+
+            foreach (string m in mapPieces) Console.WriteLine(m);
+            
+        }
+
         public static void EldenRingLegacyMapConv() {
             Dictionary<string, string> mapNames = new Dictionary<string, string>();
             foreach (string line in File.ReadAllLines(@"E:\Extracted\Souls\Elden Ring\mapnames.txt")) {
