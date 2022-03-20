@@ -8,6 +8,109 @@ using ImageMagick;
 namespace SmallScripts {
     class Souls {
 
+
+        public static void EldenRingWeaponRequirements() {
+
+            HashSet<int> skipMovesetCategories = new HashSet<int>(new int[] { 48, 49, 47, 41, 51, 44, 45, 46, 52 });
+            List<string> samurai = new List<string>();
+            List<string> vagabond = new List<string>();
+
+            List<string>[] strReqs = new List<string>[100];
+            List<string>[] dexReqs = new List<string>[100];
+            List<string>[] intReqs = new List<string>[100];
+            List<string>[] faiReqs = new List<string>[100];
+            List<string>[] arcReqs = new List<string>[100];
+
+            using (TextReader r = new StreamReader(File.OpenRead(@"E:\Extracted\Souls\Elden Ring\Copy of Elden Ring Weapon Data Sheet (1.03) - EquipParamWeapon (1.03).tsv"))) {
+                string[] headers = r.ReadLine().Split('\t'); //for (int i = 0; i < headers.Length; i++) Console.WriteLine(string.Format("{0:000} {1}", i, headers[i]));
+                string line = r.ReadLine();
+                while(line != null) {
+                    string[] vals = line.Split('\t');
+
+                    if (vals[0] == vals[26] && vals[1] != "" && !skipMovesetCategories.Contains(int.Parse(vals[72]))) {
+                        Console.WriteLine($"{vals[72]} {vals[1]} ");
+                        int strReq = int.Parse(vals[81]) ; if (strReq <= 8) strReq = 0;
+                        if (strReqs[strReq] == null) strReqs[strReq] = new List<string>();
+                        strReqs[strReq].Add(vals[1]);
+
+                        int dexReq = int.Parse(vals[82]); if (dexReq <= 9) dexReq = 0; 
+                        if (dexReqs[dexReq] == null) dexReqs[dexReq] = new List<string>();
+                        dexReqs[dexReq].Add(vals[1]);
+
+                        int intReq = int.Parse(vals[83]); //if (intReq <= 7) intReq = 0;
+                        if (intReqs[intReq] == null) intReqs[intReq] = new List<string>();
+                        intReqs[intReq].Add(vals[1]);
+
+                        int faiReq = int.Parse(vals[84]); //if (faiReq <= 6) faiReq = 0;
+                        if (faiReqs[faiReq] == null) faiReqs[faiReq] = new List<string>();
+                        faiReqs[faiReq].Add(vals[1]);
+
+                        int arcReq = int.Parse(vals[197]); //if (arcReq <= 7) arcReq = 0;
+                        if (arcReqs[arcReq] == null) arcReqs[arcReq] = new List<string>();
+                        arcReqs[arcReq].Add(vals[1]);
+
+                        if (strReq <= 28 && dexReq <= 18 && intReq <= 9 && faiReq <= 9 && arcReq <= 7) vagabond.Add(vals[1]);
+                        if (strReq <= 25 && dexReq <= 20 && intReq <= 9 && faiReq <= 8 && arcReq <= 8) samurai.Add(vals[1]);
+                    }
+
+                    line = r.ReadLine();
+                }
+            }
+            /*
+            Console.WriteLine("\nSTR");
+            for(int i = 0; i < 99; i++) {
+                if (strReqs[i] != null) {
+                    Console.Write(string.Format("{0:00}: ", i));
+                    for (int w = 0; w < strReqs[i].Count; w++) Console.Write(strReqs[i][w] + ", ");
+                    Console.WriteLine();
+                }
+            }
+
+            Console.WriteLine("\nDEX");
+            for (int i = 0; i < 99; i++) {
+                if (dexReqs[i] != null) {
+                    Console.Write(string.Format("{0:00}: ", i));
+                    for (int w = 0; w < dexReqs[i].Count; w++) Console.Write(dexReqs[i][w] + ", ");
+                    Console.WriteLine();
+                }
+            }
+
+            Console.WriteLine("\nINT");
+            for (int i = 1; i < 99; i++) {
+                if (intReqs[i] != null) {
+                    Console.Write(string.Format("{0:00}: ", i));
+                    for (int w = 0; w < intReqs[i].Count; w++) Console.Write(intReqs[i][w] + ", ");
+                    Console.WriteLine();
+                }
+            }
+
+            Console.WriteLine("\nFAI");
+            for (int i = 1; i < 99; i++) {
+                if (faiReqs[i] != null) {
+                    Console.Write(string.Format("{0:00}: ", i));
+                    for (int w = 0; w < faiReqs[i].Count; w++) Console.Write(faiReqs[i][w] + ", ");
+                    Console.WriteLine();
+                }
+            }
+
+            Console.WriteLine("\nARC");
+            for (int i = 1; i < 99; i++) {
+                if (arcReqs[i] != null) {
+                    Console.Write(string.Format("{0:00}: ", i));
+                    for (int w = 0; w < arcReqs[i].Count; w++) Console.Write(arcReqs[i][w] + ", ");
+                    Console.WriteLine();
+                }
+            }
+            */
+
+            Console.WriteLine($"\nVAGABOND {vagabond.Count}");
+            foreach (string weap in vagabond) if (!samurai.Contains(weap)) Console.Write(weap + ", ");
+
+            Console.WriteLine($"\n\nVAGABOND {samurai.Count}");
+            foreach (string weap in samurai) if (!vagabond.Contains(weap)) Console.Write(weap + ", ");
+
+        }
+
         public static void EldenRingListMapMask() {
             XmlDocument doc = new XmlDocument();
             doc.Load(@"C:\Games\Steam\steamapps\common\ELDEN RING\Game\menu\71_maptile-mtmskbnd-dcx\GR\data\INTERROOT_win64\menu\ScaleForm\maptile\mask\MENU_MapTile_M00.mtmsk");

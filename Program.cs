@@ -6,7 +6,7 @@ using System.Linq;
 namespace SmallScripts {
 	class Program {
 		static void Main(string[] args) {
-			Souls.EldenRingUnpackTex(@"E:\Extracted\Souls\Elden Ring\CUSA18880-app\menu\71_maptile-tpfbhd\71_MapTile");
+			Souls.EldenRingWeaponRequirements();
 			//foreach (string path in Directory.EnumerateFiles(@"C:\Games\Steam\steamapps\common\ELDEN RING\Game\map\m10\m10_01_00_00", "*.mapbnd.dcx")) Console.WriteLine(path);
 			//Souls.EldenRingMapCompose3();
 			//Souls.EldenRingUnpackTex(@"E:\Extracted\Souls\Elden Ring\menu\hi\00_solo-tpfbhd\00_Solo");
