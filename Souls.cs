@@ -8,6 +8,17 @@ using ImageMagick;
 namespace SmallScripts {
     class Souls {
 
+        public static void EldenRingListUnusedAsset() {
+            HashSet<string> assets = new HashSet<string>(File.ReadAllLines(@"E:\Extracted\Souls\Elden Ring\aeglist.txt"));
+            foreach(string msbPath in Directory.EnumerateFiles(@"E:\Extracted\Souls\Elden Ring\mapstudio\", "*.txt")) {
+                foreach(string line in File.ReadAllLines(msbPath)) {
+                    int offset = line.IndexOf("AEG");
+                    if (offset != -1) assets.Remove(line.Substring(offset, 10));
+                }
+            }
+            foreach (string asset in assets) Console.WriteLine(asset);
+        }
+
 
         public static void EldenRingWeaponRequirements() {
 
@@ -197,7 +208,7 @@ namespace SmallScripts {
 
         public static void EldenRingMapCompose3() {
             HashSet<uint> vals = new HashSet<uint>();
-            foreach (string tex in Directory.EnumerateFiles(@"E:\Extracted\Souls\Elden Ring\maptest\extra\old\", "*.dds", SearchOption.TopDirectoryOnly)) {
+            foreach (string tex in Directory.EnumerateFiles(@"E:\Extracted\Souls\Elden Ring\maptest\extra\", "*.dds", SearchOption.TopDirectoryOnly)) {
                 string[] words = Path.GetFileNameWithoutExtension(tex).Split('_');
                 uint val = uint.Parse(words[6], System.Globalization.NumberStyles.HexNumber);
                 vals.Add(val);
@@ -214,7 +225,7 @@ namespace SmallScripts {
             MagickImage image = new MagickImage(MagickColor.FromRgb(0,255,0), tiles * tileSize, tiles * tileSize);
             
 
-            foreach (string tex in Directory.EnumerateFiles(@"E:\Extracted\Souls\Elden Ring\maptest\extra\old\", "*.dds", SearchOption.TopDirectoryOnly)) {
+            foreach (string tex in Directory.EnumerateFiles(@"E:\Extracted\Souls\Elden Ring\maptest\extra\", "*.dds", SearchOption.TopDirectoryOnly)) {
                 
                 string[] words = Path.GetFileNameWithoutExtension(tex).Split('_');
                 uint x = ushort.Parse(words[4]); uint y = uint.Parse(words[5]); uint lookup = x + (y << 16);
@@ -229,38 +240,38 @@ namespace SmallScripts {
                     ));
             }
             Console.WriteLine("Writing...");
-            image.Write($@"E:\Extracted\Souls\Elden Ring\maptest\extracombined\{searchVal}.png");
+            image.Write($@"E:\Extracted\Souls\Elden Ring\maptest\extra2\{searchVal}.png");
         }
 
         public static void EldenRingMapSort() {
             Dictionary<string, uint> values = new Dictionary<string, uint>();
 
             foreach(string line in File.ReadAllLines(@"E:\Extracted\Souls\Elden Ring\mapmask.txt")) {
-                if (!line.StartsWith("MENU_MAPTILE_M00_L0")) continue;
+                if (!line.StartsWith("MENU_MAPTILE_M00_L2")) continue;
                 values[line.Substring(0, 26)] = uint.Parse(line.Substring(26, 8), System.Globalization.NumberStyles.HexNumber);
             }
 
 
             foreach(string file in Directory.EnumerateFiles(@"C:\Games\Steam\steamapps\common\ELDEN RING\Game\menu\71_maptile-tpfbhd\71_MapTile", "*.dds")) {
                 string filename = Path.GetFileNameWithoutExtension(file).ToUpper();
-                if (!filename.StartsWith("MENU_MAPTILE_M00_L0")) continue;
+                if (!filename.StartsWith("MENU_MAPTILE_M00_L2")) continue;
                 uint value = uint.Parse(filename.Substring(26, 8), System.Globalization.NumberStyles.HexNumber);
 
                 if (value == 0) { Console.WriteLine("EMPT " + filename);
-                    File.Copy(file, @"E:\Extracted\Souls\Elden Ring\maptest\empty\" + Path.GetFileName(file));
+                    File.Copy(file, @"E:\Extracted\Souls\Elden Ring\maptest2\empty\" + Path.GetFileName(file), true);
                     continue; 
                 }
                 string nameKey = filename.Substring(0, 26);
                 if (values.ContainsKey(nameKey)) {
                     if (values[nameKey] == value) { 
                         Console.WriteLine("FULL " + filename);
-                        File.Copy(file, @"E:\Extracted\Souls\Elden Ring\maptest\full\" + Path.GetFileName(file));
+                        File.Copy(file, @"E:\Extracted\Souls\Elden Ring\maptest2\full\" + Path.GetFileName(file), true);
                     } else if ((values[nameKey] | value) > values[nameKey]) { 
                         Console.WriteLine("XTRA  " + filename);
-                        File.Copy(file, @"E:\Extracted\Souls\Elden Ring\maptest\extra\" + Path.GetFileName(file));
+                        File.Copy(file, @"E:\Extracted\Souls\Elden Ring\maptest2\extra\" + Path.GetFileName(file), true);
                     } else {
                         Console.WriteLine("PART  " + filename);
-                        File.Copy(file, @"E:\Extracted\Souls\Elden Ring\maptest\partial\" + Path.GetFileName(file));
+                        File.Copy(file, @"E:\Extracted\Souls\Elden Ring\maptest2\partial\" + Path.GetFileName(file), true);
                     }
                 } else {
                     Console.WriteLine("UNUS " + filename);
