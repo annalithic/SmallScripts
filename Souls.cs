@@ -8,6 +8,35 @@ using ImageMagick;
 namespace SmallScripts {
     class Souls {
 
+        public static void EldenRingWrongWarpMap() {
+
+            MagickImage image = new MagickImage(MagickColors.Black, 7168, 9216);
+
+
+            foreach (string line in File.ReadAllLines(@"E:\Extracted\Souls\Elden Ring\erplayerwarp.txt")) {
+                string[] words = line.Split('|');
+                string[] map = words[0].Split('_');
+                int cellX = int.Parse(map[1]); int cellY = int.Parse(map[2]);
+                float x = float.Parse(words[2]); float y = float.Parse(words[4]);
+
+                float posX = (x + 128 + (cellX - 32) * 256);
+                float posY = (9216 - (y + 128 + (cellY - 28) * 256));
+
+                int cellPosX = (128 + (cellX - 32) * 256);
+                int cellPosY = (9216 - (128 + (cellY - 28) * 256));
+
+                Console.WriteLine($"{words[0]} {posX} {posY}");
+
+                image.Draw(new Drawables().StrokeColor(MagickColors.White).StrokeWidth(4).FillColor(MagickColors.White).Line(posX, posY, cellPosX, cellPosY));//.Ellipse(posX, posY, 6, 6, 0, 360));
+
+            }
+
+            Console.WriteLine("writing");
+
+            image.Write(@"E:\Extracted\Souls\Elden Ring\warps.png");
+            Console.WriteLine("done");
+        }
+
         public static void EldenRingListUnusedAsset() {
             HashSet<string> assets = new HashSet<string>(File.ReadAllLines(@"E:\Extracted\Souls\Elden Ring\aeglist.txt"));
             foreach(string msbPath in Directory.EnumerateFiles(@"E:\Extracted\Souls\Elden Ring\mapstudio\", "*.txt")) {
@@ -127,11 +156,9 @@ namespace SmallScripts {
             doc.Load(@"C:\Games\Steam\steamapps\common\ELDEN RING\Game\menu\71_maptile-mtmskbnd-dcx\GR\data\INTERROOT_win64\menu\ScaleForm\maptile\mask\MENU_MapTile_M00.mtmsk");
             XmlNode root = doc.LastChild;
             for(int i = 0; i < root.ChildNodes.Count; i++) {
-                //if (i > 100) break;
                 XmlNode node = root.ChildNodes[i];
                 string coord = string.Format("{0:00000}", int.Parse(node.Attributes[1].Value));
                 string value = string.Format("{0:X8}", int.Parse(node.Attributes[2].Value));
-                //int x = int.Parse(coord.Substring(1, 2)); int y = int.Parse(coord.Substring(3, 2)); int level = int.Parse(coord.Substring(0, 1));
                 Console.WriteLine($"M00_L{coord[0]}_{coord.Substring(1,2)}_{coord.Substring(3,2)}_{value}");
             }
         }
@@ -280,10 +307,51 @@ namespace SmallScripts {
             }
         }
 
+
+        public static void EldenRingMapCompose4() {
+
+
+            uint[,] vals = new uint[41,41];
+
+            XmlDocument doc = new XmlDocument();
+            doc.Load(@"C:\Games\Steam\steamapps\common\ELDEN RING\Game\menu\71_maptile-mtmskbnd-dcx\GR\data\INTERROOT_win64\menu\ScaleForm\maptile\mask\MENU_MapTile_M00.mtmsk");
+            XmlNode root = doc.LastChild;
+            for (int i = 0; i < root.ChildNodes.Count; i++) {
+                XmlNode node = root.ChildNodes[i];
+
+                string coord = string.Format("{0:00000}", int.Parse(node.Attributes[1].Value));
+                if (!coord.StartsWith("0")) continue;
+                int x = int.Parse(coord.Substring(1, 2)); int y = int.Parse(coord.Substring(3, 2));
+
+                vals[x, y] = uint.Parse(node.Attributes[2].Value);
+            }
+
+
+            MagickImage image = new MagickImage(MagickColors.Black, 256 * 41, 256 * 41);
+
+
+            foreach (string tex in Directory.EnumerateFiles(@"C:\Games\Steam\steamapps\common\ELDEN RING\Game\menu\71_maptile-tpfbhd\71_MapTile\", "*.dds", SearchOption.TopDirectoryOnly)) {
+                string filename = Path.GetFileNameWithoutExtension(tex).ToUpper();
+                if (!filename.StartsWith("MENU_MAPTILE_M00_L0")) continue;
+                string[] words = filename.Split('_');
+                uint x = ushort.Parse(words[4]); uint y = uint.Parse(words[5]);
+                uint val = uint.Parse(words[6], System.Globalization.NumberStyles.HexNumber);
+
+                if(vals[x,y] == val) {
+                    MagickImage tile = new MagickImage(tex);
+                    image.Draw(new Drawables().Composite(x * 256, image.Height - y * 256 - 256, tile));
+                    Console.WriteLine(filename);
+                }
+            }
+            Console.WriteLine("saving");
+            image.Write(@"E:\Extracted\Souls\Elden Ring\map1.03.tga");
+            Console.WriteLine("done");
+        }
+
+
         public static void EldenRingMapCompose() {
 
             HashSet<string> usedTiles = new HashSet<string>(File.ReadAllLines(@"E:\Extracted\Souls\Elden Ring\mapmask.txt"));
-
 
             
             Dictionary<uint, uint> paths = new Dictionary<uint, uint>();
@@ -300,15 +368,9 @@ namespace SmallScripts {
 
             MagickImage image = new MagickImage(MagickColors.Black, 256 * 41, 256 * 41);
             
-
-            
-            int test = 0;
-
             foreach(uint lookup in paths.Keys) {
-                //test++; if (test > 10) break;
                 string filename = String.Format("M00_L0_{0:00}_{1:00}_{2:X8}.dds", lookup & ushort.MaxValue, lookup >> 16, paths[lookup]);
                 Console.WriteLine(filename);
-                //MagickImage tile = new MagickImage(@"C:\Games\Steam\steamapps\common\ELDEN RING\Game\menu\71_maptile-tpfbhd\71_MapTile\" + filename);
                 MagickImage tile = new MagickImage(@"E:\Extracted\Souls\Elden Ring\worldmap\" + filename);
                 image.Draw(new Drawables().Composite(
                     (lookup & ushort.MaxValue) * 256,
@@ -316,27 +378,27 @@ namespace SmallScripts {
                     tile
                     ));
             }
-            
 
-            //NUMBERS STUFF
-            /*
-            HashSet<string> maps = new HashSet<string>(File.ReadAllLines(@"E:\Extracted\Souls\Elden Ring\m60.txt"));
-            int startX = 28; int startY = 24; int cellSize = 256; int textSize = 48; //00
-            //int startX = 14; int startY = 12; int cellSize = 512; int textSize = 64; //01
-            //int startX = 7; int startY = 6; int cellSize = 1024; int textSize = 96; //02
-
-            for (int y = 0; y < 41; y++) {
-                for (int x = 0; x < 41; x++) {
-                    if(maps.Contains(string.Format(@"/map/mapstudio/m60_{0:00}_{1:00}_10.msb.dcx", x + startX, y + startY)))
-                    image.Draw(new Drawables().FontPointSize(textSize).Font("Lucida Console").FillColor(MagickColors.White).TextAlignment(TextAlignment.Center)
-                        .Text(cellSize * x + cellSize/2, image.Height - cellSize * y - cellSize/2, 
-                        string.Format("{0:00}_{1:00}_10", x+startX, y+startY)));
-                }
-            }
-            */
             Console.WriteLine("saving");
-            image.Write(@"E:\Extracted\Souls\Elden Ring\map1.02.tga");
+            image.Write(@"E:\Extracted\Souls\Elden Ring\map1.03.tga");
             Console.WriteLine("done");
         }
+
+        //NUMBERS STUFF
+        /*
+        HashSet<string> maps = new HashSet<string>(File.ReadAllLines(@"E:\Extracted\Souls\Elden Ring\m60.txt"));
+        int startX = 28; int startY = 24; int cellSize = 256; int textSize = 48; //00
+        //int startX = 14; int startY = 12; int cellSize = 512; int textSize = 64; //01
+        //int startX = 7; int startY = 6; int cellSize = 1024; int textSize = 96; //02
+
+        for (int y = 0; y < 41; y++) {
+            for (int x = 0; x < 41; x++) {
+                if(maps.Contains(string.Format(@"/map/mapstudio/m60_{0:00}_{1:00}_10.msb.dcx", x + startX, y + startY)))
+                image.Draw(new Drawables().FontPointSize(textSize).Font("Lucida Console").FillColor(MagickColors.White).TextAlignment(TextAlignment.Center)
+                    .Text(cellSize * x + cellSize/2, image.Height - cellSize * y - cellSize/2, 
+                    string.Format("{0:00}_{1:00}_10", x+startX, y+startY)));
+            }
+        }
+        */
     }
 }
