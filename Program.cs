@@ -3,10 +3,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using SoulsFormats;
+
 namespace SmallScripts {
 	class Program {
 		static void Main(string[] args) {
-			Souls.EldenRingMapCompose4();
+			Souls.EldenRingBtlUnkDump();
+
+			//BTL btl = new BTL();
+			//btl.Version = 18;
+			//btl.Write(@"C:\Games\Steam\steamapps\common\ELDEN RING\Game\map\m31\m31_18_00_00\m31_18_00_00_0000.btl.dcx", DCX.Type.DCX_KRAK);
 			//foreach (string path in Directory.EnumerateFiles(@"C:\Games\Steam\steamapps\common\ELDEN RING\Game\map\m10\m10_01_00_00", "*.mapbnd.dcx")) Console.WriteLine(path);
 			//Souls.EldenRingMapCompose3();
 			//Souls.EldenRingUnpackTex(@"E:\Extracted\Souls\Elden Ring\menu\hi\00_solo-tpfbhd\00_Solo");

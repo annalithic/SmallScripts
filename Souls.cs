@@ -8,6 +8,22 @@ using ImageMagick;
 namespace SmallScripts {
     class Souls {
 
+        public static void EldenRingBtlUnkDump() {
+            foreach(string path in Directory.EnumerateFiles(@"C:\Games\Steam\steamapps\common\ELDEN RING\Game\map", "*.btl.dcx", SearchOption.AllDirectories)) {
+                try {
+                    BTL btl = BTL.Read(path);
+                    for (int i = 0; i < btl.Lights.Count; i++) {
+                        var light = btl.Lights[i];
+                        Console.Write(Path.GetFileNameWithoutExtension(path) + " ");
+                        Console.Write($"UNK64 {light.Unk64[0]} {light.Unk64[1]} {light.Unk64[2]} {light.Unk64[3]} ");
+                        Console.Write($"UNK84 {light.Unk84[0]} {light.Unk84[1]} {light.Unk84[2]} {light.Unk84[3]} ");
+                        Console.Write($"UNKA0 {light.UnkA0[0]} {light.UnkA0[1]} {light.UnkA0[2]} {light.UnkA0[3]} ");
+                        Console.WriteLine($"UNKC0 {light.UnkC0[0]} {light.UnkC0[1]} {light.UnkC0[2]} {light.UnkC0[3]} {light.Name}");
+                    }
+                } catch { }
+            }
+        }
+
         public static void EldenRingWrongWarpMap() {
 
             MagickImage image = new MagickImage(MagickColors.Black, 7168, 9216);
@@ -221,7 +237,7 @@ namespace SmallScripts {
         }
 
         public static void EldenRingUnpackTex(string dir) {
-            foreach(string path in Directory.EnumerateFiles(dir, "*.tpf.dcx")) {
+            foreach(string path in Directory.EnumerateFiles(dir, "*.tpf")) {
                 TPF tpf = TPF.Read(path);
                 if (tpf.Textures.Count != 1) Console.WriteLine(path);
                 File.WriteAllBytes(path.Substring(0, path.Length - 7) + "dds", tpf.Textures[0].Bytes);
