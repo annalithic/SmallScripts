@@ -8,6 +8,47 @@ using ImageMagick;
 namespace SmallScripts {
     class Souls {
 
+        public static void EldenRingAEGList() {
+            Dictionary<string, string> mapnames = new Dictionary<string, string>();
+            foreach (string line in File.ReadAllLines(@"F:\Unity\GreatRunity\res\mapnamesshort.txt")) mapnames[line.Split(':')[0]] = line.Split(':')[1];
+
+
+            List<string> assets = new List<string>();
+            Dictionary<string, Dictionary<string, int>> a = new Dictionary<string, Dictionary<string, int>>();
+            foreach(string file in Directory.EnumerateFiles(@"F:\Unity\GreatRunity\res\mapstudio", "*.txt")) {
+                foreach (string line in File.ReadAllLines(file)) {
+                    if (!line.Contains("AEG")) continue;
+                    string asset = line.Substring(0, line.IndexOf('|'));
+                    asset = asset.Substring(0, asset.LastIndexOf('_'));
+                    if (asset.StartsWith("m")) asset = asset.Substring(13, asset.Length - 13);
+
+                    string map = Path.GetFileNameWithoutExtension(file);
+
+                    if (mapnames.ContainsKey(map)) map = $"{mapnames[map]} ({map})";
+                    //if (map.StartsWith("m60")) map = map.Substring(4, map.Length - 4);
+                    //else map = map.Substring(0, 6);
+
+                    if (!a.ContainsKey(asset)) {
+                        a[asset] = new Dictionary<string, int>();
+                        assets.Add(asset);
+                    }
+                    if (!a[asset].ContainsKey(map)) a[asset][map] = 0;
+                    a[asset][map]++;
+                }
+            }
+
+            assets.Sort();
+            foreach(string asset in assets) {
+                Console.Write(asset + "|");
+                foreach(string map in a[asset].Keys) {
+                    Console.Write($"{map} (x{a[asset][map]})|");
+                }
+                Console.WriteLine();
+            }
+
+            
+        }
+
         public static void EldenRingBtlUnkDump() {
             foreach(string path in Directory.EnumerateFiles(@"C:\Games\Steam\steamapps\common\ELDEN RING\Game\map", "*.btl.dcx", SearchOption.AllDirectories)) {
                 try {

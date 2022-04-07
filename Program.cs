@@ -8,7 +8,7 @@ using SoulsFormats;
 namespace SmallScripts {
 	class Program {
 		static void Main(string[] args) {
-			Souls.EldenRingBtlUnkDump();
+			Souls.EldenRingAEGList();
 
 			//BTL btl = new BTL();
 			//btl.Version = 18;
