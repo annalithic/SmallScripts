@@ -8,7 +8,7 @@ using SoulsFormats;
 namespace SmallScripts {
 	class Program {
 		static void Main(string[] args) {
-			Souls.EldenRingAEGList();
+			Souls.EldenRingAssetMap("sarcophagi", "AEG099_373", "AEG099_377", "AEG099_378", "AEG007_705", "AEG007_706", "AEG007_707");
 
 			//BTL btl = new BTL();
 			//btl.Version = 18;

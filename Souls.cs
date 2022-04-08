@@ -8,6 +8,54 @@ using ImageMagick;
 namespace SmallScripts {
     class Souls {
 
+        public static void EldenRingAssetMap(string filename, params string[] assets) {
+
+            MagickImage image = new MagickImage(MagickColors.Black, 7168, 9216);
+
+            HashSet<string> assetSet = new HashSet<string>(assets);
+
+            foreach (string file in Directory.EnumerateFiles(@"F:\Unity\GreatRunity\res\mapstudio", "*.txt")) {
+
+                string mapName = Path.GetFileNameWithoutExtension(file);
+                if (!mapName.StartsWith("m60")) continue;
+                int mapX = int.Parse(mapName.Substring(4,2));
+                int mapZ = int.Parse(mapName.Substring(7,2));
+                int mapLevel = int.Parse(mapName.Substring(10, 2));
+                if (mapLevel > 2) continue;
+
+                foreach (string line in File.ReadAllLines(file)) {
+                    if (!line.Contains("AEG")) continue;
+                    string asset = line.Substring(0, line.IndexOf('|'));
+                    asset = asset.Substring(0, asset.LastIndexOf('_'));
+                    if (asset.StartsWith("m")) asset = asset.Substring(13, asset.Length - 13);
+
+
+
+                    if(assetSet.Contains(asset)) {
+                        string[] words = line.Split('|');
+                        float x = float.Parse(words[2]);
+                        float z = float.Parse(words[4]);
+
+                        float posX = (mapX - 32) * 256 + 128 + x;
+                        float posY = 9216 - ((mapZ - 28) * 256 + 128 + z);
+
+                        image.Draw(new Drawables()
+                            .FillColor(MagickColors.White)
+                            .Ellipse(posX, posY, 3, 3, 0, 360));
+
+
+                        Console.WriteLine($"{mapX}_{mapZ}_{mapLevel} ({x},{z}) {asset}");
+                    }
+
+                }
+            }
+
+            Console.WriteLine("writing...");
+            image.Write(filename + ".png");
+            Console.WriteLine("done.");
+
+        }
+
         public static void EldenRingAEGList() {
             Dictionary<string, string> mapnames = new Dictionary<string, string>();
             foreach (string line in File.ReadAllLines(@"F:\Unity\GreatRunity\res\mapnamesshort.txt")) mapnames[line.Split(':')[0]] = line.Split(':')[1];
