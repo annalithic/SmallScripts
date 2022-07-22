@@ -2,10 +2,22 @@
 using System.Collections.Generic;
 using System.IO;
 using Util;
+using System.Globalization;
 
 namespace SmallScripts {
 	static class PoE {
-		
+		public static void LeagueWeeks() {
+			foreach(string line in File.ReadAllLines(@"E:\Extracted\PathOfExile\leaguedates.txt")) {
+				string[] words = line.Split('\t');
+
+				DateTime date = DateTime.ParseExact(words[1], "yyyy-MM-dd", CultureInfo.InvariantCulture);
+				DateTime year = new DateTime(date.Year, 1, 1);
+				int days = (date - year).Days;
+				int weeks = (days - 1) / 7 + 1;
+				Console.WriteLine($"{date.Year} | {weeks} | {words[0]}");
+			}
+		}
+
 		public static void MapTopologies() {
 			Dictionary<int, string> topologyNames = new Dictionary<int, string>();
 			foreach(string line in File.ReadAllLines(@"F:\Extracted\PathOfExile\3.16.Scourge\topologies.txt")) {
