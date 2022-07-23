@@ -8,6 +8,28 @@ using System.Linq;
 namespace SmallScripts {
 	static class TES3 {
 
+		public static void FO76DepthMap(string path) {
+			MagickImage image = new MagickImage(path);
+			ushort[] data = new ushort[image.Width * image.Height];
+			int i = 0;
+			foreach (var pixel in image.GetPixels()) {
+				var color = pixel.ToColor();
+				int col = color.G + color.B / 256;
+				//Console.WriteLine(col);
+				data[i] = (ushort)col;
+				i++;
+            }
+			byte[] byteData = new byte[data.Length * 2];
+			Buffer.BlockCopy(data, 0, byteData, 0, byteData.Length);
+
+			MagickImage output = new MagickImage(byteData, new PixelReadSettings(image.Width, image.Height, StorageType.Short, "R"));
+
+			output.Format = MagickFormat.Gray;
+			output.Depth = 16;
+
+			output.Write("test.r16");
+        }
+
 		public static void MWTesAnnwynColorMap() {
 			Dictionary<MagickColor, MagickColor> colorMap = new Dictionary<MagickColor, MagickColor>();
 			colorMap[MagickColors.Black] = new MagickColor(4279, 2360, 1103);

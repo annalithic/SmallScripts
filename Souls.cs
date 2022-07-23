@@ -326,7 +326,7 @@ namespace SmallScripts {
         }
 
         public static void EldenRingUnpackTex(string dir) {
-            foreach(string path in Directory.EnumerateFiles(dir, "*.tpf")) {
+            foreach(string path in Directory.EnumerateFiles(dir, "*.tpf.dcx")) {
                 TPF tpf = TPF.Read(path);
                 if (tpf.Textures.Count != 1) Console.WriteLine(path);
                 File.WriteAllBytes(path.Substring(0, path.Length - 7) + "dds", tpf.Textures[0].Bytes);
@@ -449,7 +449,7 @@ namespace SmallScripts {
                 }
             }
             Console.WriteLine("saving");
-            image.Write(@"E:\Extracted\Souls\Elden Ring\map1.03.tga");
+            image.Write(@"E:\Extracted\Souls\Elden Ring\map1.05.tga");
             Console.WriteLine("done");
         }
 

@@ -4,11 +4,50 @@ using System.Collections.Generic;
 using System.Linq;
 
 using SoulsFormats;
+using System.Globalization;
 
 namespace SmallScripts {
 	class Program {
 		static void Main(string[] args) {
-			Souls.EldenRingAssetMap("sarcophagi", "AEG099_373", "AEG099_377", "AEG099_378", "AEG007_705", "AEG007_706", "AEG007_707");
+
+			TES3.FO76DepthMap(@"E:\Extracted\BGS\fo76utils\fo76_map_16kb.dds"); return;
+
+			PoE.LeagueWeeks(); return;
+
+			TESO.CreateTileMap(@"E:\Extracted\ESO\mapmod\tamriel.png", 4);
+			return;
+
+			//Souls.EldenRingUnpackTex(@"C:\Games\Steam\steamapps\common\ELDEN RING\Game\menu\71_maptile-tpfbhd\71_MapTile");
+			Souls.EldenRingMapCompose4();
+			return;
+
+			int i = 0;
+			foreach(string file in Directory.EnumerateFiles(@"E:\Extracted\ESO\model", "*.gr2")) {
+				string newpath = @"F:\Extracted\ESO\model\" + Path.GetFileName(file);
+				if (!File.Exists(newpath)) {
+					Console.WriteLine(newpath);
+					File.Copy(file, newpath);
+				}
+				i++; if (i % 1000 == 0) Console.WriteLine(i);
+            }
+
+			//Souls.EldenRingUnpackTex(@"C:\Games\Steam\steamapps\common\ELDEN RING\Game\menu\71_maptile-tpfbhd\71_MapTile");
+
+			//Souls.EldenRingMapCompose4();
+
+			/*
+			using(TextReader r = new StreamReader(File.OpenRead(@"E:\Anna\Desktop\a.reg"))) {
+				string line = r.ReadLine();
+				while(line != null ) {
+					if (line.Contains("imperator")) Console.WriteLine(line);
+					line = r.ReadLine();
+				}
+            }
+			*/
+
+			//Paradox.V3SOL();
+			//Souls.EldenRingAssetMap("sarcophagi", "AEG099_373", "AEG099_377", "AEG099_378", "AEG007_705", "AEG007_706", "AEG007_707");
+			//Souls.EldenRingAssetMap("skyruins", "AEG007_076", "AEG007_077", "AEG007_078", "AEG007_079", "AEG007_080");
 
 			//BTL btl = new BTL();
 			//btl.Version = 18;
@@ -40,7 +79,7 @@ namespace SmallScripts {
 			//TES3.MWBooks(@"F:\Extracted\Morrowind\tribunal.json");
 			//Console.WriteLine();
 			//TES3.MWBooks(@"F:\Extracted\Morrowind\bloodmoon.json");
-			//TESO.CreateTileMap(@"F:\Extracted\ESO\mapmod\tamriel.png", 4);
+			
 			//TESO.CreateTileMap(@"F:\Extracted\ESO\mapmod\blackwood_base.png", 4);
 			//TESO.CreateTileMap(@"F:\Extracted\ESO\mapmod\westernskryim_base.png", 4);
 			//TESO.CreateTileMap(@"F:\Extracted\ESO\mapmod\southernelsweyr_base.png", 4);
@@ -81,7 +120,7 @@ namespace SmallScripts {
 			*/
 			//Warframe.TOC toc = new Warframe.TOC(@"C:\Games\Steam\steamapps\common\Warframe\Cache.Windows\B.Misc.toc");
 			//toc.Print();
-			}
+		}
 
 		static void MHIconRenames2() {
 			string[] names = Directory.EnumerateFiles(@"D:\Extracted\MH5R\game\romfs\re_chunk_000\natives\NSW\gui\80_Texture\boss_icon", "*.png").ToArray();
