@@ -2,15 +2,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using SoulsFormats;
-using System.Globalization;
+using ImageMagick;
+using ImageMagick.Formats;
+using System.Threading;
+using System.Diagnostics;
 
 namespace SmallScripts {
 	class Program {
 		static void Main(string[] args) {
 
-			TES3.FO76DepthMap(@"E:\Extracted\BGS\fo76utils\fo76_map_16kb.dds"); return;
+			ConvertJxl(@"E:\Anna\Anna\Pictures\Screenshots\Screenshots\", 3);
+			return;
+			//TES3.FO3LodCombine(); return;
+			//TES3.FO76DepthMap(@"E:\Extracted\BGS\fo76utils\papermap_city_h.dds"); return;
 
 			PoE.LeagueWeeks(); return;
 
@@ -121,6 +125,44 @@ namespace SmallScripts {
 			//Warframe.TOC toc = new Warframe.TOC(@"C:\Games\Steam\steamapps\common\Warframe\Cache.Windows\B.Misc.toc");
 			//toc.Print();
 		}
+
+		static void ConvertJxl(string path, int threads = 3) {
+
+			List<string>[] lists = new List<string>[threads];
+			for (int i = 0; i < lists.Length; i++) lists[i] = new List<string>();
+			int current = 0;
+
+			foreach (string file in Directory.EnumerateFiles(path, "*.png", SearchOption.AllDirectories)) {
+				if (File.Exists(file.Replace(".png", ".jxl"))) continue;
+				FileInfo info = new FileInfo(file); if (info.Length == 0) continue;
+				lists[current].Add(file);
+				current = (current + 1) % threads;
+				
+			}
+			Stopwatch s = Stopwatch.StartNew();
+			Thread[] thread = new Thread[threads];
+			for(int i = 0; i < threads; i++) {
+				thread[i] = new Thread(ConvertJxlThread);
+				thread[i].Start(lists[i]);
+            }
+			for (int i = 0; i < threads; i++) thread[i].Join();
+			Console.WriteLine(s.ElapsedMilliseconds);
+        }
+
+		static void ConvertJxlThread(Object obj) {
+			List<string> files = (List<string>)obj;
+			JxlWriteDefines write = new JxlWriteDefines() { Effort = 3 };
+			foreach (string file in files) {
+				Console.WriteLine(file);
+				MagickImage image = new MagickImage(file);
+				image.Quality = 100;
+				image.Write(file.Replace(".png", ".jxl"), write);
+				File.Delete(file);
+			}
+			Console.WriteLine("Done");
+		}
+
+
 
 		static void MHIconRenames2() {
 			string[] names = Directory.EnumerateFiles(@"D:\Extracted\MH5R\game\romfs\re_chunk_000\natives\NSW\gui\80_Texture\boss_icon", "*.png").ToArray();

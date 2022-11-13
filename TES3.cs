@@ -7,6 +7,20 @@ using System.Linq;
 
 namespace SmallScripts {
 	static class TES3 {
+		
+		public static void FO3LodCombine() {
+			MagickImageCollection lodimages = new MagickImageCollection();
+			for(int y = 0; y < 32; y++) {
+				for(int x = 31; x >= 0; x--) {
+					string path = $@"F:\Extracted\BGS\Fallout3\textures\landscape\lod\wasteland\diffuse\wasteland.n.level4.x{x * 4 - 64}.y{y * 4 - 64}.dds";
+					lodimages.Add(new MagickImage(path));
+                }
+            }
+			var combined = lodimages.Montage(new MontageSettings() { Geometry = new MagickGeometry(256) });
+			Console.WriteLine("Writing...");
+			combined.Write("fo3.png");
+			Console.WriteLine("Done.");
+		}
 
 		public static void FO76DepthMap(string path) {
 			MagickImage image = new MagickImage(path);
@@ -22,17 +36,17 @@ namespace SmallScripts {
 			byte[] byteData = new byte[data.Length * 2];
 			Buffer.BlockCopy(data, 0, byteData, 0, byteData.Length);
 
-			MagickImage output = new MagickImage(byteData, new PixelReadSettings(image.Width, image.Height, StorageType.Short, "R"));
+			//MagickImage output = new MagickImage(byteData, new PixelReadSettings(image.Width, image.Height, StorageType.Short, "R"));
 
-			output.Format = MagickFormat.Gray;
-			output.Depth = 16;
+			//output.Format = MagickFormat.Gray;
+			//output.Depth = 16;
 
-			output.Write("test.r16");
+			//output.Write(path.Replace(".dds", ".r16"));
         }
-
+		/*
 		public static void MWTesAnnwynColorMap() {
 			Dictionary<MagickColor, MagickColor> colorMap = new Dictionary<MagickColor, MagickColor>();
-			colorMap[MagickColors.Black] = new MagickColor(4279, 2360, 1103);
+			colorMap[MagickColors.Black] = new MagickColor(0, 0, 0);
 
 			string[] lines = File.ReadAllLines(@"F:\Extracted\BethesdaGameStudioUtils\TESAnnwyn\tesannwyn-ltex3.dat");
 
@@ -53,7 +67,7 @@ namespace SmallScripts {
 					image.Resize(1, 1);
 					ushort g = (ushort) (byte.Parse(words[0]) * 256);
 					//g++;
-					MagickColor c1 = new MagickColor(g, g, g);
+					MagickColor c1 = new MagickColor(0, 0, 0);
 					MagickColor c2 = (MagickColor)image.GetPixels().GetPixel(0, 0).ToColor();
 					colorMap[c1] = c2;
 					Console.WriteLine($"{c1.R} {c1.G} {c1.B} - {c2.R} {c2.G} {c2.B} - {texname}");
@@ -104,7 +118,7 @@ namespace SmallScripts {
 
 
 		}
-
+		*/
 		public static void MWBooks(string espPath) {
 			JArray esp = JArray.Parse(File.ReadAllText(espPath));
 			for (int i = 0; i < esp.Count; i++) {
