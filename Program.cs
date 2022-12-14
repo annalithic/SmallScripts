@@ -11,12 +11,34 @@ namespace SmallScripts {
 	class Program {
 		static void Main(string[] args) {
 
-			ConvertJxl(@"E:\Anna\Anna\Pictures\Screenshots\Screenshots\", 3);
-			return;
+			//for (int g = 0; g < 30; g++) Console.WriteLine(64 * g + 12); return;
+
+			//TES3.MWMapResize(40, 64); return;
+			//TES3.MWMapCombine(); return;
+
+			TES3.MWDoors(@"F:\Extracted\BGS\tr_mainland.json"); return;
+
+
+			PoE.LeagueWeeks(); return;
+
+			foreach (string file in Directory.EnumerateFiles(@"F:\Extracted\GI\Texture2D", "*.png")) {
+				if (file.Contains('#')) {
+					string filename = Path.GetFileNameWithoutExtension(file).Split('#')[0] + ".png";
+					if (File.Exists(Path.Combine(Path.GetDirectoryName(file), filename)))
+						File.Move(file, Path.Combine(@"F:\Extracted\GI\extra", Path.GetFileName(file)));
+                }
+            } return;
+
+			TES3.MWQuests(@"F:\Extracted\BGS\morrowind.json", @"F:\Extracted\BGS\tribunal.json", @"F:\Extracted\BGS\bloodmoon.json", @"F:\Extracted\BGS\tr_mainland.json"); return;
+
+
+			if(args.Length == 1) {
+				ConvertJxl(args[0], 3, ".bmp");
+			}
 			//TES3.FO3LodCombine(); return;
 			//TES3.FO76DepthMap(@"E:\Extracted\BGS\fo76utils\papermap_city_h.dds"); return;
 
-			PoE.LeagueWeeks(); return;
+			
 
 			TESO.CreateTileMap(@"E:\Extracted\ESO\mapmod\tamriel.png", 4);
 			return;
@@ -126,14 +148,17 @@ namespace SmallScripts {
 			//toc.Print();
 		}
 
-		static void ConvertJxl(string path, int threads = 3) {
+		static void ConvertJxl(string path, int threads = 3, string extension = ".png") {
 
 			List<string>[] lists = new List<string>[threads];
 			for (int i = 0; i < lists.Length; i++) lists[i] = new List<string>();
 			int current = 0;
 
-			foreach (string file in Directory.EnumerateFiles(path, "*.png", SearchOption.AllDirectories)) {
-				if (File.Exists(file.Replace(".png", ".jxl"))) continue;
+			foreach (string file in Directory.EnumerateFiles(path, "*" + extension, SearchOption.AllDirectories)) {
+				if (File.Exists(file.Replace(extension, ".jxl"))) {
+					FileInfo jxlinfo = new FileInfo(file.Replace(extension, ".jxl"));
+					if(jxlinfo.Length > 0) continue;
+				}
 				FileInfo info = new FileInfo(file); if (info.Length == 0) continue;
 				lists[current].Add(file);
 				current = (current + 1) % threads;
@@ -152,12 +177,13 @@ namespace SmallScripts {
 		static void ConvertJxlThread(Object obj) {
 			List<string> files = (List<string>)obj;
 			JxlWriteDefines write = new JxlWriteDefines() { Effort = 3 };
-			foreach (string file in files) {
-				Console.WriteLine(file);
-				MagickImage image = new MagickImage(file);
+			for(int i = 1; i < files.Count; i++) {
+
+				Console.WriteLine($"{i}/{files.Count} {files[i]}");
+				MagickImage image = new MagickImage(files[i]);
 				image.Quality = 100;
-				image.Write(file.Replace(".png", ".jxl"), write);
-				File.Delete(file);
+				image.Write(Path.Combine(Path.GetDirectoryName(files[i]), Path.GetFileNameWithoutExtension(files[i])) + ".jxl", write);
+				File.Delete(files[i]);
 			}
 			Console.WriteLine("Done");
 		}

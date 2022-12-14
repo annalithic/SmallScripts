@@ -119,6 +119,151 @@ namespace SmallScripts {
 
 		}
 		*/
+
+		public static void MWMapResize(int oldSize, int newSize) {
+			foreach(string line in File.ReadAllLines(@"E:\Anna\Anna\Visual Studio\MWMap\index.html")) {
+				if (!line.Contains("style=\"left:")) continue;
+				var split = line.Split('"');
+				var split2 = new string[7];
+				split2[0] = split[0];
+				split2[1] = split[1];
+				split2[2] = split[4];
+				split2[3] = split[5];
+				split2[4] = split[2];
+				split2[5] = split[3];
+				split2[6] = split[6];
+				//var split2 = split[5].Split(':', ';');
+				//float left = float.Parse(split2[1]);
+				//float top = float.Parse(split2[3]);
+				//split[5] = $"left:{(int)(left + 0.5)};top:{(int)(top + 0.5)}";
+				//split[5] = $"left:{left * newSize / oldSize};top:{top * newSize / oldSize}";
+				for (int i = 0; i < split2.Length - 1; i++) Console.Write(split2[i] + "\"");
+				Console.WriteLine(split2[split2.Length - 1]);
+			}
+        }
+
+		public static void MWMapCombine() {
+
+			int minX = int.MaxValue; int maxX = int.MinValue;
+			int minY = int.MaxValue; int maxY = int.MinValue;
+
+
+			foreach (string path in Directory.EnumerateFiles(@"E:\Programs\Steam\steamapps\common\Morrowind\Maps", "*.bmp")) {
+				string coord = Path.GetFileName(path);
+				coord = coord.Substring(coord.IndexOf('(') + 1);
+				var split = coord.Split(',', ')');
+				int x = int.Parse(split[0]); if (x > maxX) maxX = x; if (x < minX) minX = x;
+				int y = int.Parse(split[1]); if (y > maxY) maxY = y; if (y < minY) minY = y;
+				Console.WriteLine($"{x} {y}");
+            }
+
+			Console.WriteLine($"{minX},{minY} to {maxX},{maxY}");
+
+			
+
+			MagickImage map = new MagickImage(MagickColors.Black, (maxX - minX) * 256, (maxY - minY) * 256);
+
+			int i = 0;
+			foreach (string path in Directory.EnumerateFiles(@"E:\Programs\Steam\steamapps\common\Morrowind\Maps", "*.bmp")) {
+				string coord = Path.GetFileName(path);
+				coord = coord.Substring(coord.IndexOf('(') + 1);
+				var split = coord.Split(',', ')');
+				int x = int.Parse(split[0]);
+				int y = int.Parse(split[1]);
+				MagickImage image = new MagickImage(path);
+				map.Draw(new Drawables().Composite((x - minX) * 256, map.Height - (y - minY) * 256  -256, image));
+				i++; if (i % 10 == 0) Console.WriteLine(path);
+			}
+			map.Write("morrowind.bmp");
+		}
+
+		public static void MWDoors(string espPath) {
+			int cellSize = 64;
+			int xAdd = 42 * 8192;
+			int yAdd = 38 * 8192;
+
+			HashSet<string> cells = new HashSet<string>();
+			Dictionary<string, string> cellTypes = new Dictionary<string, string>();
+			foreach(string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypes.txt")) {
+				var split = line.Split('\t');
+				cellTypes[split[0]] = split[1];
+            }
+			
+
+			JArray esp = JArray.Parse(File.ReadAllText(espPath));
+			for(int i = 0; i < esp.Count; i++) {
+				if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell") {
+					string cellName = esp[i]["id"].Value<string>();
+					//Console.WriteLine(cellName);
+					JArray refs = (JArray)esp[i]["references"];
+					for(int refNum = 0; refNum < refs.Count; refNum++) {
+						if(refs[refNum]["door_destination_coords"] != null) {
+							if(refs[refNum]["door_destination_cell"] != null) {
+								//Console.WriteLine(cellName + " -> " + refs[refNum]["door_destination_cell"].Value<string>());
+							} else {
+								JArray coords = (JArray)refs[refNum]["door_destination_coords"];
+								float x = coords[0].Value<float>();
+								float y = coords[1].Value<float>();
+								float xMap = (x + xAdd) * cellSize / 8192;
+								float yMap = (yAdd - y) * cellSize / 8192;
+
+								string type = cellTypes.ContainsKey(cellName) ? cellTypes[cellName] : "unknown";
+
+								int cellX = (int)(x/8192);
+								int cellY = (int)(y / 8192);
+								cells.Add(cellName);
+								Console.WriteLine($"<div class=\"icon {type.Substring(0,3)} {type}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{cellName}\"></div>");
+								//Console.WriteLine($"{cellName} -> ({xMap},{yMap})");
+							}
+                        }
+                    }
+				}
+			}
+			Console.WriteLine("\r\n\r\n\r\n");
+			//foreach (string cell in cells) Console.WriteLine(cell);
+
+		}
+		public static void MWQuests(params string[] espPaths) {
+
+			Dictionary<string, string> questNames = new Dictionary<string, string>();
+			Dictionary<string, string> questFiles = new Dictionary<string, string>();
+
+			foreach(string espPath in espPaths) {
+				string file = Path.GetFileNameWithoutExtension(espPath);
+				Console.WriteLine(espPath);
+				JArray esp = JArray.Parse(File.ReadAllText(espPath));
+				int i = 0;
+				while (i < esp.Count) {
+					if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Dialogue") {
+						string type = esp[i]["dialogue_type"].Value<string>();
+						if (type == "Journal") {
+							string id = esp[i]["id"].Value<string>();
+							if(!questFiles.ContainsKey(id)) questFiles[id] = file;
+							if (!questNames.ContainsKey(id) || questNames[id] == "NO QUEST NAMEAAAAAAAAAAAAAAAAAAAAA") {
+								string name = "NO QUEST NAMEAAAAAAAAAAAAAAAAAAAAA";
+								string zero = null;
+								string name2 = null;
+								i++;
+								while (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Info") {
+									if (esp[i]["data"]["disposition"].Value<int>() == 0) {
+										zero = esp[i]["text"].Value<string>();
+										if (esp[i]["quest_name"] != null) name = esp[i]["text"].Value<string>();
+									} else if (esp[i]["quest_name"] != null) name2 = esp[i]["text"].Value<string>();
+									i++;
+								}
+								if (name == "NO QUEST NAMEAAAAAAAAAAAAAAAAAAAAA" && zero != null) questNames[id] = zero;
+								else if (name == "NO QUEST NAMEAAAAAAAAAAAAAAAAAAAAA" && name2 != null) questNames[id] = name2;
+								else questNames[id] = name;
+								i--;
+							}
+						}
+					}
+					i++;
+				}
+			}
+			foreach (string quest in questNames.Keys) Console.WriteLine(questFiles[quest] + "|" + quest + "|" + questNames[quest]);
+		}
+
 		public static void MWBooks(string espPath) {
 			JArray esp = JArray.Parse(File.ReadAllText(espPath));
 			for (int i = 0; i < esp.Count; i++) {
