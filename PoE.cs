@@ -3,9 +3,68 @@ using System.Collections.Generic;
 using System.IO;
 using Util;
 using System.Globalization;
+using System.Text;
+using ImageMagick;
 
 namespace SmallScripts {
 	static class PoE {
+
+		public static void PoeUIImages(string folder) {
+			//PoeUIImages(folder, "Art/UIImages1.txt");
+			PoeUIImages(folder, "Art/UIShopImages.txt");
+			PoeUIImages(folder, "Art/UIDivinationImages.txt");
+			PoeUIImages(folder, "Art/UIXbox.txt");
+			PoeUIImages(folder, "Art/UIPS4.txt");
+
+		}
+
+		public static void PoeUIImages(string baseFolder, string lookupPath) {
+
+			HashSet<string> done = new HashSet<string>();
+
+			foreach(string line in File.ReadAllLines(Path.Combine(baseFolder, lookupPath), Encoding.Unicode)) {
+				var words = StringSplitIgnoreQuotes(line);
+				string name = Path.Combine(baseFolder, "UIImages", words[0].Trim('"'));
+
+				if (done.Contains(name)) continue;
+
+				string atlas = Path.Combine(baseFolder, words[1].Trim('"'));
+
+				int x1 = int.Parse(words[2]); int y1 = int.Parse(words[3]);
+				int x2 = int.Parse(words[4]); int y2 = int.Parse(words[5]);
+
+
+				if (!File.Exists(atlas)) {
+					Console.WriteLine(atlas + " NOT EXTRACTED");
+					continue;
+				}
+
+				MagickImage img = new MagickImage(atlas);
+				img.Crop(new MagickGeometry(x1, y1, x2 - x1, y2 - y1));
+				if (!Directory.Exists(Path.GetDirectoryName(name))) Directory.CreateDirectory(Path.GetDirectoryName(name));
+				img.Write(name + ".png");
+				done.Add(name);
+				Console.WriteLine(name);
+
+				//foreach (var word in words) Console.Write(word + "|"); Console.WriteLine();
+            }
+        }
+
+		public static string[] StringSplitIgnoreQuotes(string line) {
+			List<string> words = new List<string>();
+			StringBuilder current = new StringBuilder();
+			bool quoted = false;
+			for(int i = 0; i < line.Length; i++) {
+				if (line[i] == '"') quoted = !quoted;
+				if (!quoted && line[i] == ' ') {
+					words.Add(current.ToString());
+					current.Clear();
+				} else current.Append(line[i]);
+            }
+			words.Add(current.ToString());
+			return words.ToArray();
+        }
+
 		public static void LeagueWeeks() {
 			foreach(string line in File.ReadAllLines(@"E:\Extracted\PathOfExile\leaguedates.txt")) {
 				string[] words = line.Split('\t');
