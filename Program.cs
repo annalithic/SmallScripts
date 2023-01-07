@@ -11,12 +11,16 @@ namespace SmallScripts {
 	class Program {
 		static void Main(string[] args) {
 
-			PoE.PoeUIImages(@"F:\Extracted\PathOfExile\3.20.Sanctum\ROOT"); return;
+			//PoE.PoeUIImages(@"F:\Extracted\PathOfExile\3.20.Sanctum\ROOT"); return;
 
 			//for (int g = 0; g < 30; g++) Console.WriteLine(64 * g + 12); return;
 
 			//TES3.MWMapResize(40, 64); return;
-			//TES3.MWMapCombine(); return;
+			TES3.MWRegionDoors(@"F:\Extracted\BGS\tr_mainland.json"); return;
+
+
+			TES3.MWMapCombine(); return;
+
 
 			TES3.MWDoors(@"F:\Extracted\BGS\tr_mainland.json"); return;
 

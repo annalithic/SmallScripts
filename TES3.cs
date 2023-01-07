@@ -177,6 +177,87 @@ namespace SmallScripts {
 			map.Write("morrowind.bmp");
 		}
 
+		public static void MWRegionDoors(string espPath) {
+			int cellSize = 64;
+			int xAdd = 42 * 8192;
+			int yAdd = 38 * 8192;
+
+			//HashSet<string> cells = new HashSet<string>();
+			Dictionary<string, string> cellTypes = new Dictionary<string, string>();
+			foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypes.txt")) {
+				var split = line.Split('\t');
+				cellTypes[split[0]] = split[1];
+			}
+
+
+			JArray esp = JArray.Parse(File.ReadAllText(espPath));
+			string[,] cellRegions = new string[256, 256];
+			for (int i = 0; i < esp.Count; i++) {
+				if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell" && ((esp[i]["data"]["flags"].Value<int>() & 1) == 0)) {
+					//string cellName = esp[i]["id"].Value<string>();
+					var cellX = esp[i]["data"]["grid"][0].Value<int>();
+					var cellY = esp[i]["data"]["grid"][1].Value<int>();
+					string region = esp[i]["region"] is null ? "Wilderness" : esp[i]["region"].Value<string>();
+					cellRegions[128 + cellX, 128 + cellY] = region;
+				}
+			}
+
+			Dictionary<string, string> intCellRegions = new Dictionary<string, string>();
+
+
+			for (int i = 0; i < esp.Count; i++) {
+				if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell" && ((esp[i]["data"]["flags"].Value<int>() & 1) == 1)) {
+					string cellName = esp[i]["id"].Value<string>();
+					//var cellX = esp[i]["data"]["grid"][0].Value<int>();
+					//var cellY = esp[i]["data"]["grid"][1].Value<int>();
+					//string region = esp[i]["region"] is null ? "Wilderness" : esp[i]["region"].Value<string>(); 
+
+					//if (!isInterior) Console.WriteLine($"{region} {cellName} {cellX} {cellY}");
+					JArray refs = (JArray)esp[i]["references"];
+					for (int refNum = 0; refNum < refs.Count; refNum++) {
+
+						if (refs[refNum]["door_destination_coords"] != null) {
+
+							if (refs[refNum]["door_destination_cell"] != null) {
+								//Console.WriteLine(cellName + " -> " + refs[refNum]["door_destination_cell"].Value<string>());
+							} else {
+
+								JArray coords = (JArray)refs[refNum]["door_destination_coords"];
+								float x = coords[0].Value<float>();
+								float y = coords[1].Value<float>();
+								float xMap = (x + xAdd) * cellSize / 8192;
+								float yMap = (yAdd - y) * cellSize / 8192;
+
+								string type = cellTypes.ContainsKey(cellName) ? cellTypes[cellName] : "unknown";
+								cellName = cellName.Split(',')[0];
+
+								float xAdj = (x > 0) ? x : x - 8192; //to counteract rounding down
+								float yAdj = (y > 0) ? y : y - 8192; //to counteract rounding down
+								int cellX = (int)(xAdj / 8192);
+								int cellY = (int)(yAdj / 8192);
+
+								string region = cellRegions[cellX + 128, cellY + 128];
+								if (region is null) region = "NULLREGION";
+								region = region.EndsWith(" Region") ? region.Substring(0, region.Length - 7) : region;
+
+								if (!intCellRegions.ContainsKey(cellName)) {
+									intCellRegions[cellName] = region;
+									Console.WriteLine($"{region}_{type}_{cellName}_{cellX}_{cellY}");
+								} else if (intCellRegions[cellName] != region) Console.WriteLine($"CELL IN MULTIPLE REGIONS {cellName} {intCellRegions[cellName]} {region}");
+
+								//cells.Add(cellName);
+								//
+								//Console.WriteLine($"{cellName} -> ({xMap},{yMap})");
+							}
+						}
+					}
+				}
+			}
+			Console.WriteLine("\r\n\r\n\r\n");
+			//foreach (string cell in cells) Console.WriteLine(cell);
+
+		}
+
 		public static void MWDoors(string espPath) {
 			int cellSize = 64;
 			int xAdd = 42 * 8192;
