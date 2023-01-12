@@ -7,7 +7,147 @@ using System.Linq;
 
 namespace SmallScripts {
 	static class TES3 {
-		
+
+
+		public static void TES3GridmapCoords() {
+			MagickImage image = new MagickImage(MagickColors.Black, 40 * 128, 40 * 128);
+			for (int x = 0; x < 128; x++) {
+				Console.WriteLine(x);
+				for (int y = 0; y < 128; y++) {
+					image.Draw(new Drawables().FillColor(MagickColors.ForestGreen).Text(x * 40, 128 * 40 - y * 40 - 40, $"{x - 64},{y - 64}"));
+				}
+			}
+			image.Write("gridmapcoords.png");
+        }
+
+
+		public static void MWRegionCreateMaps(string espPath) {
+			int minX = int.MaxValue; int minY = int.MaxValue;
+			int maxX = int.MinValue; int maxY = int.MinValue;
+
+			JArray esp = JArray.Parse(File.ReadAllText(espPath));
+			string[,] cellRegions = new string[256, 256];
+			for (int i = 0; i < esp.Count; i++) {
+				if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell" && ((esp[i]["data"]["flags"].Value<int>() & 1) == 0)) {
+					//string cellName = esp[i]["id"].Value<string>();
+					var cellX = esp[i]["data"]["grid"][0].Value<int>();
+					var cellY = esp[i]["data"]["grid"][1].Value<int>();
+					string region = esp[i]["region"] is null ? "Wilderness" : esp[i]["region"].Value<string>();
+					if(region != "Wilderness") {
+						Console.WriteLine($"coe,{cellX},{cellY}");
+						if (cellX > maxX) maxX = cellX;
+						if (cellY > maxY) maxY = cellY;
+						if (cellX < minX) minX = cellX;
+						if (cellY < minY) minY = cellY;
+
+					}
+				}
+			}
+
+			Console.WriteLine();
+			Console.WriteLine($"{minX},{minY} to {maxX},{maxY}");
+			//foreach (string cell in cells) Console.WriteLine(cell);
+
+		}
+
+		public static void TES3LocalMapCombine(int tileSize, int x1, int y1, int x2, int y2) {
+			MagickImage montage = new MagickImage(MagickColors.Black, tileSize * 8, tileSize * 8);
+			int xCount = x2 - x1; int yCount = y2 - y1;
+
+			for (int y = 0; y < xCount; y++) {
+				Console.Write("-");
+				for (int x = 0; x < yCount; x++) {
+					string search = $@"F:\Anna\Desktop\maps3 - Copy\{x1 + x},{y1 + y}.bmp";
+					if (File.Exists(search)) {
+						MagickImage image = new MagickImage(search);
+						montage.Draw(new Drawables().Composite(x * tileSize, (yCount - y) * tileSize, image));
+
+					}
+					//else Console.WriteLine(search);
+				}
+			}
+			montage.Write($@"F:\Anna\Desktop\map.png");
+
+		}
+
+		public static void TES3LocalMapCombine() {
+
+			int tileSize = 1024;
+
+			for(int mapX = -2; mapX < 3; mapX++) {
+				for (int mapY = -2; mapY < 4; mapY++) {
+					int startY =  mapY * 8; int startX = mapX * 8;
+					MagickImage montage = new MagickImage(MagickColors.Black, tileSize * 8, tileSize * 8);
+
+					for (int y = 0; y < 8; y++) {
+						Console.Write("-");
+						for (int x = 0; x < 8; x++) {
+							string search = $@"F:\Anna\Desktop\maps\{startX + x},{startY + y}.bmp";
+							if (File.Exists(search)) {
+								MagickImage image = new MagickImage(search);
+								montage.Draw(new Drawables().Composite(x * tileSize, (7 - y) * tileSize, image));
+
+							}
+							//else Console.WriteLine(search);
+						}
+					}
+					Console.WriteLine();
+
+					Console.WriteLine($"{mapX},{mapY}");
+					montage.Write($@"F:\Anna\Desktop\maps1\{mapX},{mapY}.png");
+
+                }
+            }
+        }
+
+		public static void TES3WeatherValues() {
+			string[] weatherTypes = new string[] { "Clear", "Cloudy", "Foggy", "Thunderstorm", "Rain", "Overcast", "Ashstorm", "Blight", "Snow", "Blizzard" };
+			string[] tods = new string[] { "Sunrise", "Day", "Sunset", "Night" };
+			string[] weatherValues = new string[] { "Sky", "Fog", "Ambient", "Sun" };
+
+			foreach(string value in weatherValues) {
+				Console.WriteLine($"    vec4 {value}Colors[{weatherTypes.Length * tods.Length}]=vec4[](");
+				foreach(string weather in weatherTypes) {
+					foreach(string tod in tods) {
+						string search = $"Weather_{weather}_{value}_{tod}_Color";
+						foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\weathercolors.txt")){
+							if (line.StartsWith(search)) {
+								var words = line.Split(',');
+								float r = ((float)byte.Parse(words[1]))/ 255;
+								float g = ((float)byte.Parse(words[2])) / 255;
+								float b = ((float)byte.Parse(words[3])) / 255;
+								Console.WriteLine($"        vec4({r},{g},{b},1),");
+							}
+						}
+
+					}
+				}
+				Console.WriteLine("    );\r\n");
+            }
+		}
+
+
+		public static void TES3WeatherColors() {
+			string[] lines = File.ReadAllLines(@"F:\Extracted\Morrowind\weathercolors.txt");
+			MagickImage image = new MagickImage(MagickColors.White, 512, lines.Length * 32);
+			for(int i = 0; i < lines.Length; i++) {
+				var words = lines[i].Split(',');
+				byte r = byte.Parse(words[1]);
+				byte g = byte.Parse(words[2]);
+				byte b = byte.Parse(words[3]);
+				MagickColor color = new MagickColor(r, g, b);
+
+				image.Draw(new Drawables().FillColor(color).Rectangle(0, 32 * i, 512, 32 * i + 32));
+				image.Draw(new Drawables().StrokeColor(MagickColors.Black).StrokeWidth(4).Text(4, 32 * i + 16, words[0]));
+				image.Draw(new Drawables().FillColor(MagickColors.White).Text(4, 32 * i + 16, words[0]));
+
+				Console.WriteLine(words[0]);
+				//if (i > 10) break;
+            }
+			image.Write("MorrowindWeatherColors.png");
+
+		}
+
 		public static void FO3LodCombine() {
 			MagickImageCollection lodimages = new MagickImageCollection();
 			for(int y = 0; y < 32; y++) {
@@ -141,6 +281,40 @@ namespace SmallScripts {
 				Console.WriteLine(split2[split2.Length - 1]);
 			}
         }
+
+
+		public static void OpenMWMapCombine(string folder, int tileSize = 256) {
+
+			int minX = int.MaxValue; int maxX = int.MinValue;
+			int minY = int.MaxValue; int maxY = int.MinValue;
+
+
+			foreach (string path in Directory.EnumerateFiles(folder, "*.bmp")) {
+				string[] split = Path.GetFileName(path).Split(new char[1] { '.' }, StringSplitOptions.None);
+				int x = int.Parse(split[split.Length - 3]); if (x > maxX) maxX = x; if (x < minX) minX = x;
+				int y = int.Parse(split[split.Length - 2]); if (y > maxY) maxY = y; if (y < minY) minY = y;
+				Console.WriteLine($"{x} {y}");
+			}
+
+			Console.WriteLine($"{minX},{minY} to {maxX},{maxY}");
+
+
+
+			MagickImage map = new MagickImage(MagickColors.Black, (maxX - minX) * tileSize, (maxY - minY) * tileSize);
+
+			int i = 0;
+			foreach (string path in Directory.EnumerateFiles(folder, "*.bmp")) {
+				string[] split = Path.GetFileName(path).Split(new char[1] { '.' }, StringSplitOptions.None);
+				int x = int.Parse(split[split.Length - 3]);
+				int y = int.Parse(split[split.Length - 2]);
+				MagickImage image = new MagickImage(path);
+				map.Draw(new Drawables().Composite((x - minX) * tileSize, map.Height - (y - minY) * tileSize - tileSize, image));
+				i++; if (i % 10 == 0) 
+					Console.WriteLine(path);
+			}
+			map.Write("openmwmap.bmp");
+		}
+
 
 		public static void MWMapCombine() {
 
