@@ -12,6 +12,8 @@ namespace SmallScripts {
 		static void Main(string[] args) {
 			//TES3.TES3GridmapCoords(); return;
 
+			TES3.TES3IntCellResizeTest();
+			TES3.TES3ListInts(@"F:\Extracted\BGS\morrowind.json"); return;
 			TES3.OpenMWMapCombine(@"C:\maps"); return;
 
 			TES3.MWRegionCreateMaps(@"F:\Extracted\BGS\morrowind.json"); return;

@@ -8,6 +8,51 @@ using System.Linq;
 namespace SmallScripts {
 	static class TES3 {
 
+		public static void TES3IntCellResizeTest() {
+			MagickImageCollection coll = new MagickImageCollection();
+			foreach (string imagePath in Directory.EnumerateFiles(@"F:\Extracted\Morrowind\tombsa", "*.png")) {
+				MagickImage image = new MagickImage(imagePath);
+				coll.Add(image);
+			}
+			var montage = coll.Montage(new MontageSettings());
+			montage.Write(@"F:\Extracted\Morrowind\tombstest.png");
+
+			return;
+			foreach (string imagePath in Directory.EnumerateFiles(@"F:\Extracted\Morrowind\tombs", "*.bmp")) {
+				MagickImage image = new MagickImage(imagePath);
+				image.Resize(image.Width / 2, image.Height / 2);
+				image.Trim(); image.RePage();
+				image.Draw(new Drawables().FillColor(MagickColors.White).FontPointSize(24).Gravity(Gravity.Northwest).Text(4, 4, Path.GetFileName(imagePath).Split('.')[0]));
+				image.Write(Path.Combine(@"F:\Extracted\Morrowind\tombsa", Path.GetFileNameWithoutExtension(imagePath) + ".png"));
+				Console.WriteLine(imagePath);
+
+			}
+		}
+
+		public static void TES3ListInts(string espPath) {
+			JArray esp = JArray.Parse(File.ReadAllText(espPath));
+			List<string> ints = new List<string>();
+
+			for (int i = 0; i < esp.Count; i++) {
+				if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell" && ((esp[i]["data"]["flags"].Value<int>() & 1) == 1)) {
+					ints.Add(esp[i]["id"].Value<string>());
+				}
+			}
+			if (ints.Count == 0) return;
+
+			int groupSize = 400;
+			for(int start = 0; start < ints.Count; start += groupSize) {
+				Console.WriteLine("if(i<1)");
+				Console.WriteLine("coc,\"" + ints[start] + "\"");
+				for (int i = 1; i < groupSize; i++) {
+					if (i + start >= ints.Count) break;
+					Console.WriteLine($"elseif(i<{i + 1})");
+					Console.WriteLine("coc,\"" + ints[i + start] + "\"");
+				}
+				Console.WriteLine("\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n");
+			}
+
+		}
 
 		public static void TES3GridmapCoords() {
 			MagickImage image = new MagickImage(MagickColors.Black, 40 * 128, 40 * 128);
