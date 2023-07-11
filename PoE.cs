@@ -5,9 +5,59 @@ using Util;
 using System.Globalization;
 using System.Text;
 using ImageMagick;
+using System.Diagnostics;
+using System.Threading;
 
 namespace SmallScripts {
 	static class PoE {
+
+		public static void PoeExtractFSB(int threads = 4) {
+			//int debugCount = 0;
+			List<string>[] folders = new List<string>[threads];
+			for (int i = 0; i < threads; i++) folders[i] = new List<string>();
+			int threadIdx = 0;
+			int debug = 0;
+			foreach (string folder in Directory.EnumerateDirectories(@"F:\Extracted\PathOfExile\3.21.Crucible\audio\bank\")) {
+				//debug++;
+				//if (debug > 40) break;
+				folders[threadIdx].Add(folder);
+				threadIdx = (threadIdx + 1) % threads;
+			}
+
+			Thread[] thread = new Thread[threads];
+			for (int i = 0; i < threads; i++) {
+				thread[i] = new Thread(ExtractFSBThread);
+				thread[i].Start(folders[i]);
+			}
+
+		}
+
+
+		static void ExtractFSBThread(object obj) {
+
+			List<string> folders = (List<string>)obj;
+			for(int i = 0; i < folders.Count; i++) {
+				//debugCount++;
+				//if (debugCount > 10) break;
+				Console.WriteLine($"({i}/{folders.Count}) {Path.GetFileName(folders[i])}");
+					using (Process myProcess = new Process()) {
+						myProcess.StartInfo.UseShellExecute = false;
+						// You can start any process, HelloWorld is a do-nothing example.
+						myProcess.StartInfo.WorkingDirectory = folders[i];
+						myProcess.StartInfo.FileName = @"F:\Extracted\PathOfExile\3.21.Crucible\audio\fsb_aud_extr.exe";
+						myProcess.StartInfo.Arguments = @" 00000000.fsb";
+						myProcess.StartInfo.CreateNoWindow = true;
+						myProcess.Start();
+						myProcess.WaitForExit();
+						// This code assumes the process you are starting will terminate itself.
+						// Given that it is started without a window so you cannot terminate it
+						// on the desktop, it must terminate itself or you can do it programmatically
+						// from this application using the Kill method.
+					}
+			}
+
+			Console.WriteLine("THREAD DONE ----------------------------------------------");
+		}
 
 		public static void PoeUIImages(string folder) {
 			//PoeUIImages(folder, "Art/UIImages1.txt");
