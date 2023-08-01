@@ -10,11 +10,132 @@ using System.Diagnostics;
 namespace SmallScripts {
 	class Program {
 		static void Main(string[] args) {
-			//TES3.TES3GridmapCoords(); return;
 
-			TES3.TES3IntCellResizeTest();
-			TES3.TES3ListInts(@"F:\Extracted\BGS\morrowind.json"); return;
-			TES3.OpenMWMapCombine(@"C:\maps"); return;
+			AverageImages(@"F:\Extracted\PathOfExile\4.0.POE2\TrailerFrames\30_SingingCaverns_Monk");
+			return;
+
+			foreach(string file in Directory.EnumerateFiles(@"F:\Extracted\Riven", "*.png", SearchOption.AllDirectories)) {
+				string[] words = Path.GetFileNameWithoutExtension(file).Split('_', '.');
+				if (words.Length == 1) continue;
+
+				MagickImage image = new MagickImage(file);
+				if(image.Width >= 608 && image.Height >= 392) {
+					Console.WriteLine(file);
+					string folder = Path.Combine(@"F:\Extracted\RivenPictures", words[1]);
+					if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+					File.Copy(file, Path.Combine(folder, Path.GetFileName(file)), true);
+                }
+            }
+			return;
+
+			PoE.PoeUIImages(@"F:\Extracted\PathOfExile\a\art"); return;
+
+			Random r = new Random(0);
+			string[] pictures = Directory.EnumerateFiles(@"F:\BACKUP\PicturesMAKENEWFOLDER", "*.*", SearchOption.AllDirectories).ToArray();
+			Console.WriteLine("SORTING");
+			Array.Sort(pictures);
+			Console.WriteLine("RANDOMIZING");
+			//fisher-yates
+			for(int count = pictures.Length - 1; count > 0; count--) {
+				int swapVal = r.Next(count);
+				string temp = pictures[count];
+				pictures[count] = pictures[swapVal];
+				pictures[swapVal] = temp;
+            }
+			for(int folderNum = 0; folderNum < (pictures.Length + 100) / 100; folderNum++) {
+				if(!Directory.Exists($@"F:\BACKUP\PicturesSelected\{folderNum + 1}")) {
+					Console.WriteLine($"saving {folderNum + 1}");
+					Directory.CreateDirectory($@"F:\BACKUP\PicturesSelected\{folderNum + 1}");
+					//Directory.CreateDirectory($@"F:\BACKUP\PicturesSelected\{folderNum + 1}\cherry");
+					for (int asd = 0; asd < 100; asd++) {
+						File.Copy(pictures[asd + folderNum * 100], $@"F:\BACKUP\PicturesSelected\{folderNum + 1}\" + Path.GetFileName(pictures[asd + folderNum * 100]), true);
+					}
+					break;
+				}
+			}
+
+
+			return;
+			PoE.PoeExtractFSB(6);
+
+
+			return;
+
+			for(int cultures = 1; cultures <= 20; cultures++) {
+				for(int professions = 1; professions <= 20; professions++) {
+					string res = (professions >= 15 && cultures <= 12) || (professions == 14 && cultures <= 13) || (professions == 13 && cultures <= 14) || (professions <= 12 && cultures <= 15) ? "Y" : "N";
+					string test = (cultures + Math.Max(Math.Min(professions, 15), 12)) < 28 ? "Y" : "N";
+					Console.Write($"{test}_{res} ");
+				}
+				Console.WriteLine();
+            }
+			return;
+
+            if (args.Length == 1) {
+                ConvertJxl(args[0], 3, ".png");
+            }
+
+			return;
+            //TES3.OpenMWMapCombine(@"C:\maps", 512); return;
+
+            foreach (string path in Directory.EnumerateFiles(@"F:\Extracted\Diablo\Textures", "*.dds")) {
+				if (Path.GetFileName(path).StartsWith("mmap_")) {
+					var image = new MagickImage(path);
+					image.Write(Path.Combine(@"F:\Extracted\Diablo\mmap\", Path.GetFileNameWithoutExtension(path) + ".png"));
+                }
+            }
+			return;
+
+
+			int xCount; int yCount; int tilesize; string fileName;
+
+			xCount = 40;
+			yCount = 40;
+			fileName = "zmap_Sanctuary_Eastern_Continent";
+			tilesize = 256;
+
+			xCount = 13;
+			yCount = 13;
+			fileName = "zmap_Kehj_Hell";
+			tilesize = 512;
+
+			xCount = 9;
+			yCount = 9;
+			fileName = "zmap_Kehj_Hell_Sightless_Eye";
+			tilesize = 512;
+
+
+			MagickImageCollection montage = new MagickImageCollection();
+			for(int y = 0; y < yCount; y++ ) {
+				for(int x = 0; x < xCount; x++) {
+					MagickImage image = new MagickImage(string.Format(@"F:\Extracted\Diablo\Textures\{2}_{0:00}_{1:00}.dds", x, y, fileName));
+					if(image.Width != tilesize || image.Height != tilesize) image.Resize(256, 256);
+					montage.Add(image); ;
+					Console.WriteLine($"{x} {y}");
+				}
+			}
+
+			MontageSettings montageSettings = new MontageSettings() { Geometry = new MagickGeometry(256), TileGeometry = new MagickGeometry(xCount, yCount) };
+			var map = montage.Montage(montageSettings);
+			WebPWriteDefines write = new WebPWriteDefines() { Lossless = true, Method = 0 };
+			//JxlWriteDefines write = new JxlWriteDefines() { Effort = 2 };
+			map.Write($"{fileName}.webp", write);
+
+
+
+			PoE.LeagueWeeks(); return;
+
+			//TES3.TES3QuestInfo(@"F:\Extracted\BGS\bloodmoon.json"); return;
+			//TES3.TES3GridmapCoords(); return;
+			for (int j = 1; j <= 60; j++) Console.WriteLine($"*{j}. "); return;
+
+
+			//TES3.MWDoors(@"F:\Extracted\BGS\tr_mainland.json", 16.75f, 14.5f, 2); return; //Firewatch
+			TES3.MWDoors(@"F:\Extracted\BGS\tr_mainland.json", 24.75f, 0.75f, 1); return; //Helnim
+
+
+			//TES3.TES3IntCellResizeTest();
+			//TES3.TES3ListInts(@"F:\Extracted\BGS\morrowind.json"); return;
 
 			TES3.MWRegionCreateMaps(@"F:\Extracted\BGS\morrowind.json"); return;
 			//TES3.TES3LocalMapCombine(1024, 3, -); return;
@@ -47,9 +168,6 @@ namespace SmallScripts {
 			TES3.MWQuests(@"F:\Extracted\BGS\morrowind.json", @"F:\Extracted\BGS\tribunal.json", @"F:\Extracted\BGS\bloodmoon.json", @"F:\Extracted\BGS\tr_mainland.json"); return;
 
 
-			if(args.Length == 1) {
-				ConvertJxl(args[0], 3, ".bmp");
-			}
 			//TES3.FO3LodCombine(); return;
 			//TES3.FO76DepthMap(@"E:\Extracted\BGS\fo76utils\papermap_city_h.dds"); return;
 
@@ -163,6 +281,40 @@ namespace SmallScripts {
 			//toc.Print();
 		}
 
+		static void AverageImages(string folder, string extension = "*.png") {
+			long[] pixels = null;
+			int imageCount = 0;
+			int width = 0;
+			int height = 0;
+			foreach(string imagePath in Directory.EnumerateFiles(folder, extension)) {
+				Console.WriteLine(Path.GetFileName(imagePath));
+				MagickImage image = new MagickImage(imagePath);
+				if (pixels is null) {
+					width = image.Width;
+					height = image.Height;
+					pixels = new long[width * height * 3];
+				}
+				int i = 0;
+				foreach(var pixel in image.GetPixels()) {
+					
+					pixels[i] += pixel[0];
+					pixels[i+1] += pixel[1];
+					pixels[i+2] += pixel[2];
+					i+=3;
+				}
+				imageCount++;
+			}
+			Console.WriteLine("Dividing");
+			byte[] pixelData = new byte[pixels.Length];
+			for(int i = 0; i < pixelData.Length; i++) {
+				pixelData[i] = (byte)(pixels[i] / imageCount);
+            }
+			Console.WriteLine("Writing");
+			MagickImage output = new MagickImage();
+			output.ReadPixels(pixelData, new PixelReadSettings(width, height, StorageType.Char, PixelMapping.RGB));
+			output.Quality = 100;
+			output.Write(Path.Combine(folder, "Merged.webp"), new WebPWriteDefines() { Lossless = true });
+        }
 		static void ConvertJxl(string path, int threads = 3, string extension = ".png") {
 
 			List<string>[] lists = new List<string>[threads];
