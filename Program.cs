@@ -6,10 +6,71 @@ using ImageMagick;
 using ImageMagick.Formats;
 using System.Threading;
 using System.Diagnostics;
+using System.Diagnostics.Tracing;
 
 namespace SmallScripts {
 	class Program {
 		static void Main(string[] args) {
+
+
+			Dictionary<string, List<string>> biomes = new Dictionary<string, List<string>>();
+			Dictionary<string, List<string>> planets = new Dictionary<string, List<string>>();
+			HashSet<string> lifePlanets = new HashSet<string>();
+			foreach(string line in File.ReadAllLines(@"E:\Anna\Anna\Delphi\TES5Edit\Build\Edit Scripts\planets.txt")) {
+
+
+				string[] words = line.Split('|');
+
+				if (!words[1].Contains("NoLife") && !words[1].Contains("LifeExtreme")) lifePlanets.Add(words[0]);
+
+				if (!biomes.ContainsKey(words[1])) biomes[words[1]] = new List<string>();
+				biomes[words[1]].Add(words[0]);
+
+                if (!planets.ContainsKey(words[0])) planets[words[0]] = new List<string>();
+                planets[words[0]].Add(words[1]);
+            }
+            foreach (string planet in lifePlanets) {
+				planets[planet].Sort();
+                Console.Write(planet + ": ");
+                foreach (string biome in planets[planet]) {
+                    Console.Write(biome + ", ");
+                }
+                Console.WriteLine();
+            }
+            foreach (string planet in planets.Keys) {
+				if (lifePlanets.Contains(planet)) continue;
+                planets[planet].Sort();
+                Console.Write(planet + ": ");
+                foreach (string biome in planets[planet]) {
+                    Console.Write(biome + ", ");
+                }
+                Console.WriteLine();
+            }
+
+            return;
+
+
+            foreach (string biome in biomes.Keys) {
+				biomes[biome].Sort();
+				Console.Write(biome + ": ");
+				foreach(string planet in biomes[biome]) {
+					Console.Write(planet + ", ");
+				}
+                Console.WriteLine();
+            }
+            return;
+
+			PoE.PoeUIImages(@"F:\Extracted\PathOfExile\3.22.Ancestor\art"); return;
+
+
+			string bipedfolder = @"F:\Extracted\PathOfExile\3.22.Ancestor\monsters\genericbiped\bipedsmall\animations";
+			foreach (string file in Directory.EnumerateFiles(bipedfolder, "*.ast", SearchOption.AllDirectories)) {
+				string newname = file.Substring(bipedfolder.Length + 1).Replace('\\', '_');
+				Console.WriteLine(newname);
+				File.Copy(file, Path.Combine(@"F:\Extracted\PathOfExile\3.22.Ancestor\bipedS", newname));
+            }
+			return;
+			PoE.LeagueWeeks(); return;
 
 			AverageImages(@"F:\Extracted\PathOfExile\4.0.POE2\TrailerFrames\30_SingingCaverns_Monk");
 			return;
