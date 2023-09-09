@@ -10,9 +10,32 @@ using System.Diagnostics.Tracing;
 
 namespace SmallScripts {
 	class Program {
+
+
+
 		static void Main(string[] args) {
 
+			Starfield.ListPlanets(); return;
 
+			Dictionary<string, List<string>> plants = new Dictionary<string, List<string>>();
+			foreach (string line in File.ReadAllLines(@"E:\Anna\Anna\Delphi\TES5Edit\Build\Edit Scripts\planets.txt")) {
+				string[] words = line.Split('|');
+				if (words.Length <= 1) continue;
+				string name = $"{words[0]}|{words[2]}|{words[3]}|";
+				if (!plants.ContainsKey(name)) plants[name] = new List<string>();
+				plants[name].Add(words[1]);
+
+			}
+
+			foreach(string plant in plants.Keys) {
+				Console.Write(plant);
+				for (int i = 0; i < plants[plant].Count - 1; i++) Console.Write(plants[plant][i] + ", ");
+				if (plants[plant].Count > 0) Console.Write(plants[plant][plants[plant].Count - 1]);
+				Console.WriteLine();
+			}
+
+			return;
+			/*
 			Dictionary<string, List<string>> biomes = new Dictionary<string, List<string>>();
 			Dictionary<string, List<string>> planets = new Dictionary<string, List<string>>();
 			HashSet<string> lifePlanets = new HashSet<string>();
@@ -26,39 +49,42 @@ namespace SmallScripts {
 				if (!biomes.ContainsKey(words[1])) biomes[words[1]] = new List<string>();
 				biomes[words[1]].Add(words[0]);
 
-                if (!planets.ContainsKey(words[0])) planets[words[0]] = new List<string>();
-                planets[words[0]].Add(words[1]);
-            }
-            foreach (string planet in lifePlanets) {
+				if (!planets.ContainsKey(words[0])) planets[words[0]] = new List<string>();
+				planets[words[0]].Add(words[1]);
+			}
+			foreach (string planet in lifePlanets) {
 				planets[planet].Sort();
-                Console.Write(planet + ": ");
-                foreach (string biome in planets[planet]) {
-                    Console.Write(biome + ", ");
-                }
-                Console.WriteLine();
-            }
-            foreach (string planet in planets.Keys) {
-				if (lifePlanets.Contains(planet)) continue;
-                planets[planet].Sort();
-                Console.Write(planet + ": ");
-                foreach (string biome in planets[planet]) {
-                    Console.Write(biome + ", ");
-                }
-                Console.WriteLine();
-            }
-
-            return;
-
-
-            foreach (string biome in biomes.Keys) {
-				biomes[biome].Sort();
-				Console.Write(biome + ": ");
-				foreach(string planet in biomes[biome]) {
-					Console.Write(planet + ", ");
+				Console.Write(planet + ": ");
+				foreach (string biome in planets[planet]) {
+					Console.Write(biome + ", ");
 				}
-                Console.WriteLine();
+				Console.WriteLine();
+			}
+			foreach (string planet in planets.Keys) {
+				if (lifePlanets.Contains(planet)) continue;
+				planets[planet].Sort();
+				Console.Write(planet + ": ");
+				foreach (string biome in planets[planet]) {
+					Console.Write(biome + ", ");
+				}
+				Console.WriteLine();
+			}
+
+			return;
+
+						foreach (string biome in biomes.Keys) {
+			biomes[biome].Sort();
+			Console.Write(biome + ": ");
+			foreach(string planet in biomes[biome]) {
+				Console.Write(planet + ", ");
+			}
+            Console.WriteLine();
             }
-            return;
+
+				*/
+
+
+			return;
 
 			PoE.PoeUIImages(@"F:\Extracted\PathOfExile\3.22.Ancestor\art"); return;
 
@@ -240,7 +266,7 @@ namespace SmallScripts {
 			//Souls.EldenRingUnpackTex(@"C:\Games\Steam\steamapps\common\ELDEN RING\Game\menu\71_maptile-tpfbhd\71_MapTile");
 			Souls.EldenRingMapCompose4();
 			return;
-
+			/*
 			int i = 0;
 			foreach(string file in Directory.EnumerateFiles(@"E:\Extracted\ESO\model", "*.gr2")) {
 				string newpath = @"F:\Extracted\ESO\model\" + Path.GetFileName(file);
@@ -250,7 +276,7 @@ namespace SmallScripts {
 				}
 				i++; if (i % 1000 == 0) Console.WriteLine(i);
             }
-
+			*/
 			//Souls.EldenRingUnpackTex(@"C:\Games\Steam\steamapps\common\ELDEN RING\Game\menu\71_maptile-tpfbhd\71_MapTile");
 
 			//Souls.EldenRingMapCompose4();
