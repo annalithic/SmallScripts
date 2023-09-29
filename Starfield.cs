@@ -1,9 +1,62 @@
-﻿using System;
+﻿using ImageMagick;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
 namespace SmallScripts {
     class Starfield {
+
+        public static void TestDensityMaps() {
+            foreach(string path in Directory.EnumerateFiles(@"F:\Extracted\Starfield\DensityMaps", "*.dds", SearchOption.AllDirectories)) {
+                string filename = Path.GetFileName(path);
+                if (!filename.Contains("1k")) continue;
+                string replacement = null;
+                if (filename.Contains("_base")) replacement = @"F:\Extracted\Starfield\black.dds";
+                else if (filename.Contains("_flatinner")) replacement = @"F:\Extracted\Starfield\black.dds";
+                else if (filename.Contains("_flatouter")) replacement = @"F:\Extracted\Starfield\black.dds";
+                else if (filename.Contains("_talus")) replacement = @"F:\Extracted\Starfield\black.dds";
+                else if (filename.Contains("_flow")) replacement = @"F:\Extracted\Starfield\black.dds";
+                //solid also exists but is barely used.
+
+                if (replacement == null) continue;
+                Console.WriteLine(path);
+
+                string dest = path.Replace(@"F:\Extracted\Starfield\DensityMaps", @"C:\Anna\Documents\My Games\Starfield\Data");
+                if(!Directory.Exists(Path.GetDirectoryName(dest))) Directory.CreateDirectory(Path.GetDirectoryName(dest));
+                File.Copy(replacement, dest, true);
+
+            }
+        }
+        public static void ListAnimalBiomes() {
+
+            Dictionary<string, string> dictB = new Dictionary<string, string>();
+            foreach(string line in File.ReadAllLines(@"E:\Anna\Anna\Delphi\TES5Edit\Build\Edit Scripts\aaaCCT.txt")) {
+                string edid = line.Substring(0, line.IndexOf('|'));
+                dictB[edid] = line;
+            }
+
+
+            Dictionary<string, List<string>> animals = new Dictionary<string, List<string>>();
+            Dictionary<string, string> planets = new Dictionary<string, string>();
+
+            foreach (string line in File.ReadAllLines(@"E:\Anna\Anna\Delphi\TES5Edit\Build\Edit Scripts\aaaplanetcreatures.txt")) {
+                string[] words = line.Split('|');
+                string key = words[2];
+                if (!animals.ContainsKey(key)) {
+                    animals[key] = new List<string>();
+                    planets[key] = words[0];
+                }
+                animals[key].Add(words[1]);
+            }
+            foreach(string key in animals.Keys) {
+                if (!dictB.ContainsKey(key)) continue;
+                animals[key].Sort();
+                Console.Write(key + '|' + planets[key] + "|Biomes: ");
+                for (int i = 0; i < animals[key].Count - 1; i++) Console.Write(animals[key][i] + ", ");
+                Console.Write(animals[key][animals[key].Count - 1] + '|');
+                Console.WriteLine(dictB[key]);
+            }
+        }
 
         struct System {
             public string name;
@@ -22,8 +75,8 @@ namespace SmallScripts {
                         if(lifePlanets.Contains(bodies[i])) {
                             lifePlanets.Remove(bodies[i]);
                             Console.WriteLine(new string(':', indent) + $" [[Sf:{bodies[i]}|{bodies[i]}]] [[File:SF-icon-life.svg|14px|sub]]");
-                        } else 
-                            Console.WriteLine(new string(':', indent) + $" [[Sf:{bodies[i]}|{bodies[i]}]]");
+                        } 
+                            //Console.WriteLine(new string(':', indent) + $" [[Sf:{bodies[i]}|{bodies[i]}]]");
                         WriteBodies(lifePlanets, indent + 1, i);
                     }
                 }

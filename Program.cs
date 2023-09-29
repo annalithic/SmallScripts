@@ -14,6 +14,8 @@ namespace SmallScripts {
 
 
 		static void Main(string[] args) {
+			Starfield.TestDensityMaps(); return;
+			Starfield.ListAnimalBiomes(); return;
 
 			Starfield.ListPlanets(); return;
 
