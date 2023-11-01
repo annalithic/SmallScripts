@@ -1,4 +1,5 @@
 ﻿using ImageMagick;
+using ImageMagick.Formats;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -8,16 +9,96 @@ using System.Linq;
 namespace SmallScripts {
 	static class TES3 {
 
-		public static void TES3IntCellResizeTest() {
-			MagickImageCollection coll = new MagickImageCollection();
-			foreach (string imagePath in Directory.EnumerateFiles(@"F:\Extracted\Morrowind\tombsa", "*.png")) {
-				MagickImage image = new MagickImage(imagePath);
-				coll.Add(image);
-			}
-			var montage = coll.Montage(new MontageSettings());
-			montage.Write(@"F:\Extracted\Morrowind\tombstest.png");
 
-			return;
+		public static void TES3QuestInfo(string espPath) {
+
+			HashSet<string> npcs = new HashSet<string>();
+			Dictionary<string, string> npcCells = new Dictionary<string, string>();
+
+			JArray esp = JArray.Parse(File.ReadAllText(espPath));
+			for (int i = 0; i < esp.Count; i++) {
+				if (esp[i]["type"] == null) continue;
+				string type = esp[i]["type"].Value<string>();
+
+				if (type == "Npc") {
+					npcs.Add(esp[i]["id"].Value<string>());
+
+				} else if (type == "Cell") {
+					string cellName = esp[i]["id"].Value<string>();
+					foreach (var refr in (JArray)esp[i]["references"]) {
+						string id = refr["id"].Value<string>();
+						if(npcs.Contains(id)) {
+							if (npcCells.ContainsKey(id)) {
+								Console.WriteLine(id + " is in multiple cells");
+							} else {
+								npcCells[id] = cellName;
+                            }
+
+						}
+                    }
+
+				} else if (type == "Info") {
+					if (esp[i]["result"] == null) continue;
+					string result = esp[i]["result"].Value<string>();
+					if (!result.Contains("Journal")) continue;
+
+					string speaker = (esp[i]["speaker_id"] == null) ? "UNKNOWN" : esp[i]["speaker_id"].Value<string>();
+
+					string speaker2 = npcCells.ContainsKey(speaker) ? speaker + "|" + npcCells[speaker] : speaker;
+
+					result.Replace("\\r\\n", "\n");
+
+					foreach (string line in result.Split('\n')) {
+						string lineNoComment = line.Split(';')[0];
+
+						string[] split = lineNoComment.Split();
+						for (int word = 0; word < split.Length; word++) {
+							if (split[word] == "Journal") {
+								Console.WriteLine($"{split[word + 1].Trim('"')}|{split[word + 2]}|{speaker2}");
+								word += 2;
+							}
+						}
+
+					}
+
+				}
+
+
+
+			}
+		}
+
+		public static void MWDoors(string espPath, float cellStartX, float cellStartY, float cellSizeX, float cellSizeY = 0) {
+			if (cellSizeY == 0) cellSizeY = cellSizeX;
+			float unitSizeX = cellSizeX * 8192;
+            float unitSizeY = cellSizeY * 8192;
+            float minX = cellStartX * 8192;
+			float minY = cellStartY * 8192;
+			float maxX = minX + unitSizeX;
+			float maxY = minY + unitSizeY;
+
+			JArray esp = JArray.Parse(File.ReadAllText(espPath));
+			for (int i = 0; i < esp.Count; i++) {
+				if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell") {
+					if ((esp[i]["data"]["flags"].Value<int>() & 1) == 1) continue; //interior
+					JArray refs = (JArray)esp[i]["references"];
+					for (int refNum = 0; refNum < refs.Count; refNum++) {
+						if (refs[refNum]["door_destination_cell"] == null) continue;
+						JArray coords = (JArray)refs[refNum]["translation"];
+						float x = coords[0].Value<float>(); if (x < minX || x > maxX) continue;
+						float y = coords[1].Value<float>(); if (y < minY || y > maxY) continue;
+						string cellName = refs[refNum]["door_destination_cell"].Value<string>();
+						int xPos = (int)((x - minX) * 1000 / unitSizeX);
+						int yPos = 1000 - (int)((y - minY) * 1000 / unitSizeY);
+
+						Console.WriteLine($"{{{{Image Mark|{xPos}|{yPos}|{cellName}|{cellName}|position=on}}}}");
+					}
+				}
+			}
+			Console.WriteLine("\r\n\r\n\r\n");
+		}
+
+		public static void TES3IntCellResizeTest() {
 			foreach (string imagePath in Directory.EnumerateFiles(@"F:\Extracted\Morrowind\tombs", "*.bmp")) {
 				MagickImage image = new MagickImage(imagePath);
 				image.Resize(image.Width / 2, image.Height / 2);
@@ -338,26 +419,43 @@ namespace SmallScripts {
 				string[] split = Path.GetFileName(path).Split(new char[1] { '.' }, StringSplitOptions.None);
 				int x = int.Parse(split[split.Length - 3]); if (x > maxX) maxX = x; if (x < minX) minX = x;
 				int y = int.Parse(split[split.Length - 2]); if (y > maxY) maxY = y; if (y < minY) minY = y;
-				Console.WriteLine($"{x} {y}");
+				Console.Write($"{x} {y}, ");
 			}
-
+			Console.WriteLine();
 			Console.WriteLine($"{minX},{minY} to {maxX},{maxY}");
+			int xCount = maxX - minX + 1; int yCount = maxY - minY + 1;
+			Console.WriteLine($"{xCount * tileSize}x{yCount * tileSize}");
 
 
+			MagickImageCollection montage = new MagickImageCollection();
+			for (int i = 0; i < xCount * yCount; i++) montage.Add(new MagickImage(MagickColors.Black, 1, 1));
 
-			MagickImage map = new MagickImage(MagickColors.Black, (maxX - minX) * tileSize, (maxY - minY) * tileSize);
 
-			int i = 0;
+			//MagickImage map = new MagickImage(MagickColors.Black, (maxX - minX + 1) * tileSize, (maxY - minY + 1) * tileSize);
+
 			foreach (string path in Directory.EnumerateFiles(folder, "*.bmp")) {
 				string[] split = Path.GetFileName(path).Split(new char[1] { '.' }, StringSplitOptions.None);
 				int x = int.Parse(split[split.Length - 3]);
 				int y = int.Parse(split[split.Length - 2]);
-				MagickImage image = new MagickImage(path);
-				map.Draw(new Drawables().Composite((x - minX) * tileSize, map.Height - (y - minY) * tileSize - tileSize, image));
-				i++; if (i % 10 == 0) 
+				int xOffset = x - minX;
+				int yOffset = maxY - y;
+				montage[xOffset + yOffset * xCount] = new MagickImage(path);
+
+				//map.Draw(new Drawables().Composite((x - minX) * tileSize, map.Height - (y - minY) * tileSize - tileSize, image));
+				//i++; if (i % 10 == 0) 
 					Console.WriteLine(path);
 			}
-			map.Write("openmwmap.bmp");
+
+			MontageSettings montageSettings = new MontageSettings() { Geometry = new MagickGeometry(tileSize), TileGeometry = new MagickGeometry(xCount, yCount) };
+			var map = montage.Montage(montageSettings);
+			WebPWriteDefines write = new WebPWriteDefines() { Lossless = true, Method = 0 };
+			//JxlWriteDefines write = new JxlWriteDefines() { Effort = 2 };
+			map.Quality = 20;
+
+			int imageCount = 0;
+			while (File.Exists($"openmwmap_{imageCount}.webp")) imageCount++;
+
+			map.Write($"openmwmap_{imageCount}.webp", write);
 		}
 
 

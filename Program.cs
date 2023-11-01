@@ -6,14 +6,46 @@ using ImageMagick;
 using ImageMagick.Formats;
 using System.Threading;
 using System.Diagnostics;
-using System.Diagnostics.Tracing;
 
 namespace SmallScripts {
 	class Program {
 
 
+		static void Combine(int start, int total, int[] numbers, bool[] found) {
+			total = total + numbers[start];
+            for (int i = start + 1; i < numbers.Length; i++) {
+				Combine(i, total, numbers, found);
+			}
+			found[total] = true;
+		}
+
 
 		static void Main(string[] args) {
+			foreach(string line in File.ReadAllLines(@"F:\Anna\Desktop\a.txt")) {
+				string[] words = line.Split('|');
+				int y = int.Parse(words[2]);
+				words[2] = (y * 2 / 3).ToString();
+				Console.Write(words[0]);
+				for(int i = 1; i < words.Length; i++) Console.Write('|' + words[i]);
+				Console.WriteLine();
+			} return;
+
+            TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 4.5f, -28.5f, 3f, 2f); return; //almas thirr
+
+            //fun with combinatronics
+            bool[] found = new bool[500];
+			int[] numbers = new int[] { 1, 2, 4, 8, 16, 32, 64 };
+
+			for(int i = 0; i < numbers.Length; i++) Combine(i, 0, numbers, found);
+
+
+            for (int i = 0; i < 100; i++) Console.Write(found[i] ? "__ " : string.Format("{0} ", i));
+
+
+
+
+			return;
+
 			Starfield.TestDensityMaps(); return;
 			Starfield.ListAnimalBiomes(); return;
 
