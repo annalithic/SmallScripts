@@ -176,6 +176,23 @@ namespace SmallScripts {
 
 		}
 
+		public static void LocalMapCombine(string folder) {
+			int minX = int.MaxValue; int maxX = int.MinValue;
+			int minY = int.MaxValue; int maxY = int.MinValue;
+			foreach(string file in Directory.EnumerateFiles(folder, "*.bmp")) {
+				string coord = file.Substring(file.LastIndexOf('(') + 1);
+				coord = coord.Substring(0, coord.IndexOf(')'));
+				int x = int.Parse(coord.Substring(0, coord.IndexOf(',')));
+				if(x > maxX) maxX = x; if (x < minX) minX = x;
+				int y = int.Parse(coord.Substring(coord.IndexOf(',') + 1));
+				if (y > maxY) maxY = y; if (y < minY) minY = y;
+			}
+			Console.WriteLine($"({minX},{minY}) to ({maxX},{maxY})");
+			Console.WriteLine($"{(maxX - minX) * 512}x{(maxY - minY) * 512}");
+			TES3LocalMapCombine(512, minX, minY, maxX, maxY);
+
+        }
+
 		public static void TES3LocalMapCombine(int tileSize, int x1, int y1, int x2, int y2) {
 			MagickImage montage = new MagickImage(MagickColors.Black, tileSize * 8, tileSize * 8);
 			int xCount = x2 - x1; int yCount = y2 - y1;
@@ -183,7 +200,7 @@ namespace SmallScripts {
 			for (int y = 0; y < xCount; y++) {
 				Console.Write("-");
 				for (int x = 0; x < yCount; x++) {
-					string search = $@"F:\Anna\Desktop\maps3 - Copy\{x1 + x},{y1 + y}.bmp";
+					string search = $@"F:\Anna\Desktop\maps3 - Copy\{x1 + x},{y1 + y}.png";
 					if (File.Exists(search)) {
 						MagickImage image = new MagickImage(search);
 						montage.Draw(new Drawables().Composite(x * tileSize, (yCount - y) * tileSize, image));
@@ -208,7 +225,7 @@ namespace SmallScripts {
 					for (int y = 0; y < 8; y++) {
 						Console.Write("-");
 						for (int x = 0; x < 8; x++) {
-							string search = $@"F:\Anna\Desktop\maps\{startX + x},{startY + y}.bmp";
+							string search = $@"C:\Anna\Documents\My Games\OpenMW\maps\{startX + x},{startY + y}.bmp";
 							if (File.Exists(search)) {
 								MagickImage image = new MagickImage(search);
 								montage.Draw(new Drawables().Composite(x * tileSize, (7 - y) * tileSize, image));
@@ -416,10 +433,13 @@ namespace SmallScripts {
 
 
 			foreach (string path in Directory.EnumerateFiles(folder, "*.bmp")) {
-				string[] split = Path.GetFileName(path).Split(new char[1] { '.' }, StringSplitOptions.None);
-				int x = int.Parse(split[split.Length - 3]); if (x > maxX) maxX = x; if (x < minX) minX = x;
-				int y = int.Parse(split[split.Length - 2]); if (y > maxY) maxY = y; if (y < minY) minY = y;
-				Console.Write($"{x} {y}, ");
+                string coord = path.Substring(path.LastIndexOf('(') + 1);
+                coord = coord.Substring(0, coord.IndexOf(')'));
+                int x = int.Parse(coord.Substring(0, coord.IndexOf(',')));
+                if (x > maxX) maxX = x; if (x < minX) minX = x;
+                int y = int.Parse(coord.Substring(coord.IndexOf(',') + 1));
+                if (y > maxY) maxY = y; if (y < minY) minY = y;
+                Console.Write($"{x} {y}, ");
 			}
 			Console.WriteLine();
 			Console.WriteLine($"{minX},{minY} to {maxX},{maxY}");
@@ -434,10 +454,11 @@ namespace SmallScripts {
 			//MagickImage map = new MagickImage(MagickColors.Black, (maxX - minX + 1) * tileSize, (maxY - minY + 1) * tileSize);
 
 			foreach (string path in Directory.EnumerateFiles(folder, "*.bmp")) {
-				string[] split = Path.GetFileName(path).Split(new char[1] { '.' }, StringSplitOptions.None);
-				int x = int.Parse(split[split.Length - 3]);
-				int y = int.Parse(split[split.Length - 2]);
-				int xOffset = x - minX;
+                string coord = path.Substring(path.LastIndexOf('(') + 1);
+                coord = coord.Substring(0, coord.IndexOf(')'));
+                int x = int.Parse(coord.Substring(0, coord.IndexOf(',')));
+                int y = int.Parse(coord.Substring(coord.IndexOf(',') + 1));
+                int xOffset = x - minX;
 				int yOffset = maxY - y;
 				montage[xOffset + yOffset * xCount] = new MagickImage(path);
 

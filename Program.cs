@@ -6,6 +6,7 @@ using ImageMagick;
 using ImageMagick.Formats;
 using System.Threading;
 using System.Diagnostics;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace SmallScripts {
 	class Program {
@@ -19,9 +20,34 @@ namespace SmallScripts {
 			found[total] = true;
 		}
 
+		static void NumberGrid(int textSize = 8,int cellSize = 40, int minX = -42, int minY = -64, int maxX = 60, int maxY = 37) {
+
+			int cellsX = maxX - minX; int cellsY = maxY - minY;
+			MagickImage image = new MagickImage(MagickColors.Black, cellsX * cellSize, cellsY * cellSize);
+
+            for (int y = 0; y < cellsX; y++) {
+                for (int x = 0; x < cellsY; x++) {
+                        image.Draw(new Drawables().FontPointSize(textSize).Font("Lucida Console").FillColor(MagickColors.White).TextAlignment(TextAlignment.Center)
+                            .Text(cellSize * x + cellSize / 2, image.Height - cellSize * y - cellSize / 2, $"{minX + x},{minY + y}"));
+                }
+				Console.Write('*');
+            }
+            WebPWriteDefines write = new WebPWriteDefines() { Lossless = true, Method = 0 };
+            image.Quality = 20;
+            int imageCount = 0;
+            while (File.Exists($"gridnumbers_{imageCount}.webp")) imageCount++;
+            image.Write($"gridnumbers_{imageCount}.webp", write);
+        }
 
 		static void Main(string[] args) {
-			foreach(string line in File.ReadAllLines(@"F:\Anna\Desktop\a.txt")) {
+
+			NumberGrid(); return;
+
+
+            TES3.OpenMWMapCombine(@"F:\Extracted\Morrowind\MAPSTRNEWSMALL\maps", 128); return;
+
+
+            foreach (string line in File.ReadAllLines(@"F:\Anna\Desktop\a.txt")) {
 				string[] words = line.Split('|');
 				int y = int.Parse(words[2]);
 				words[2] = (y * 2 / 3).ToString();
