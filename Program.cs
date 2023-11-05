@@ -6,7 +6,6 @@ using ImageMagick;
 using ImageMagick.Formats;
 using System.Threading;
 using System.Diagnostics;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace SmallScripts {
 	class Program {
@@ -41,7 +40,15 @@ namespace SmallScripts {
 
 		static void Main(string[] args) {
 
-			NumberGrid(); return;
+			//foreach(string path in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\tes3conv", "*.json")) TES3.MWDoors(path); return;
+			TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json"); return;
+
+            TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 5.125f, -34.125f, 0.75f); return; //idathren
+
+            //TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 0.875f, -32.5f, 1.75f); return; //hlan oek
+
+
+            NumberGrid(); return;
 
 
             TES3.OpenMWMapCombine(@"F:\Extracted\Morrowind\MAPSTRNEWSMALL\maps", 128); return;

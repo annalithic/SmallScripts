@@ -596,7 +596,40 @@ namespace SmallScripts {
 
 		}
 
-		public static void MWDoors(string espPath) {
+		public static void MWUnknownDoords(string espPath) {
+            Dictionary<string, string> cellTypes = new Dictionary<string, string>();
+            HashSet<string> cells = new HashSet<string>();
+            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypes.txt")) {
+                var split = line.Split('\t');
+                cellTypes[split[0]] = split[1];
+            }
+
+            JArray esp = JArray.Parse(File.ReadAllText(espPath));
+            for (int i = 0; i < esp.Count; i++) {
+                if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell") {
+                    string cellName = esp[i]["id"].Value<string>();
+                    //Console.WriteLine(cellName);
+                    JArray refs = (JArray)esp[i]["references"];
+                    for (int refNum = 0; refNum < refs.Count; refNum++) {
+                        if (refs[refNum]["door_destination_coords"] != null) {
+                            if (refs[refNum]["door_destination_cell"] != null) {
+                                //Console.WriteLine(cellName + " -> " + refs[refNum]["door_destination_cell"].Value<string>());
+                            } else {
+                                cells.Add(cellName);
+                                //Console.WriteLine($"{cellName} -> ({xMap},{yMap})");
+                            }
+                        }
+                    }
+                }
+            }
+
+			foreach (string cell in cells) if (!cellTypes.ContainsKey(cell)) Console.WriteLine(cell);
+
+
+
+        }
+
+        public static void MWDoors(string espPath) {
 			int cellSize = 64;
 			int xAdd = 42 * 8192;
 			int yAdd = 38 * 8192;
@@ -638,7 +671,7 @@ namespace SmallScripts {
                     }
 				}
 			}
-			Console.WriteLine("\r\n\r\n\r\n");
+			//Console.WriteLine("\r\n\r\n\r\n");
 			//foreach (string cell in cells) Console.WriteLine(cell);
 
 		}
