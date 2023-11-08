@@ -10,7 +10,51 @@ namespace SmallScripts {
 	static class TES3 {
 
 
-		public static void TES3QuestInfo(string espPath) {
+		public static void TES3StaticList(params string[] espPaths) {
+			Dictionary<string, string> statics = new Dictionary<string, string>();
+			Dictionary<string, int> meshCounts = new Dictionary<string, int>();
+
+
+            Console.WriteLine("STATS....");
+            foreach (string espPath in espPaths) {
+				Console.WriteLine(espPath);
+				JArray esp = JArray.Parse(File.ReadAllText(espPath));
+                for (int i = 0; i < esp.Count; i++) {
+                    if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Static") {
+                        string id = esp[i]["id"].Value<string>();
+                        string mesh = esp[i]["mesh"].Value<string>();
+						statics[id] = mesh;
+                    }
+                }
+            }
+
+			Console.WriteLine("REFS....");
+            foreach (string espPath in espPaths) {
+                Console.WriteLine(espPath);
+                JArray esp = JArray.Parse(File.ReadAllText(espPath));
+                for (int i = 0; i < esp.Count; i++) {
+                    if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell") {
+                        if ((esp[i]["data"]["flags"].Value<int>() & 1) == 1) continue; //interior
+                        JArray refs = (JArray)esp[i]["references"];
+                        for (int refNum = 0; refNum < refs.Count; refNum++) {
+                            string id = refs[refNum]["id"].Value<string>();
+							if (!statics.ContainsKey(id)) continue;
+							if (!meshCounts.ContainsKey(statics[id])) meshCounts[statics[id]] = 0;
+							meshCounts[statics[id]]++;
+                        }
+                    }
+                }
+            }
+
+			Console.WriteLine("\r\n\r\n");
+			foreach (string stat in statics.Keys)
+				if (meshCounts.ContainsKey(statics[stat]))
+					Console.WriteLine($"{stat}|{statics[stat]}|{meshCounts[statics[stat]]}");
+			
+			
+        }
+
+        public static void TES3QuestInfo(string espPath) {
 
 			HashSet<string> npcs = new HashSet<string>();
 			Dictionary<string, string> npcCells = new Dictionary<string, string>();
