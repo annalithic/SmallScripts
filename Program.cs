@@ -40,8 +40,33 @@ namespace SmallScripts {
 
 		static void Main(string[] args) {
 
-			//foreach(string path in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\tes3conv", "*.json")) TES3.MWDoors(path); return;
-			TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json"); return;
+			TES3.LodMeshes(); return;
+
+			List<string> esps = new List<string>() { @"E:\Extracted\Morrowind\morrowind.json", @"E:\Extracted\Morrowind\bloodmoon.json" };
+			foreach (string path in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\tes3conv", "*.json")) esps.Add(path);
+			TES3.TES3StaticList(esps.ToArray()); return;
+
+
+            string filename2 = @"F:\Anna\Desktop\3waybillboard2.nif";
+			int level = 1;
+            for (int i = 1; i <= 4; i++) {
+				File.Copy(filename2, string.Format(@"E:\Games\MorrowindMods\lodtest\meshes\tr\f\tr_flora_ow_big{0:00}_dist_{1}.nif", i, level), true);
+			}
+            for (int i = 1; i <= 7; i++) {
+                File.Copy(filename2, string.Format(@"E:\Games\MorrowindMods\lodtest\meshes\tr\f\tr_flora_ow_med{0:00}_dist_{1}.nif", i, level), true);
+            }
+            for (int i = 1; i <= 3; i++) {
+                File.Copy(filename2, string.Format(@"E:\Games\MorrowindMods\lodtest\meshes\tr\f\tr_flora_ow_sma{0:00}_dist_{1}.nif", i, level), true);
+            }
+            for (int i = 1; i <= 8; i++) {
+                File.Copy(filename2, string.Format(@"E:\Games\MorrowindMods\lodtest\meshes\tr\f\tr_flora_ow_tal{0:00}_dist_{1}.nif", i, level), true);
+            }
+            return;
+
+            TES3.OpenMWMapCombine(@"F:\Extracted\Morrowind\MAPSTRNEWSMALL\maps", 128); return;
+
+            foreach (string path in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\tes3conv", "*.json")) TES3.MWDoors(path); return;
+			//TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json"); return;
 
             TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 5.125f, -34.125f, 0.75f); return; //idathren
 
@@ -51,7 +76,6 @@ namespace SmallScripts {
             NumberGrid(); return;
 
 
-            TES3.OpenMWMapCombine(@"F:\Extracted\Morrowind\MAPSTRNEWSMALL\maps", 128); return;
 
 
             foreach (string line in File.ReadAllLines(@"F:\Anna\Desktop\a.txt")) {

@@ -9,6 +9,30 @@ using System.Linq;
 namespace SmallScripts {
 	static class TES3 {
 
+		public static void LodMeshes() {
+			HashSet<string> lines = new HashSet<string>();
+			foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\lodmeshes.txt")) {
+				if(line.Length > 0) lines.Add(line);
+			}
+
+            foreach (string line in lines) {
+                string file = Path.Combine(@"E:\Games\MorrowindMods\Morrowind Optimization Patch\00 Core\meshes", line);
+                if (!File.Exists(file)) file = Path.Combine(@"E:\Games\MorrowindMods\TD_Addon\01 TR BSA\meshes", line);
+				if (!File.Exists(file)) file = Path.Combine(@"E:\Extracted\Morrowind\TR\meshes", line);
+                if (!File.Exists(file)) file = Path.Combine(@"E:\Extracted\Morrowind\VANILLA\meshes", line);
+				if (!File.Exists(file)) {
+					Console.WriteLine("MISSING FILE    " + line);
+					continue;
+				}
+				string dest = Path.Combine(@"E:\Games\MorrowindMods\lodtest\meshes", line.Substring(0, line.Length - 4) + "_dist.nif");
+				if(!File.Exists(dest)) {
+					Console.WriteLine(dest);
+					if (!Directory.Exists(Path.GetDirectoryName(dest))) Directory.CreateDirectory(Path.GetDirectoryName(dest));
+                    File.Copy(file, dest);
+                }
+
+            }
+		}
 
 		public static void TES3StaticList(params string[] espPaths) {
 			Dictionary<string, string> statics = new Dictionary<string, string>();
