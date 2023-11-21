@@ -5,10 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Util;
 
 namespace SmallScripts {
 	static class TES3 {
-
 		public static void LodMeshes() {
 			HashSet<string> lines = new HashSet<string>();
 			foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\lodmeshes.txt")) {
@@ -79,6 +79,19 @@ namespace SmallScripts {
         }
 
         public static void TES3QuestInfo(string espPath) {
+
+			Dictionary<string, List<string>> questDialogues = new Dictionary<string, List<string>>();
+			Dictionary<string, string> questNames = new Dictionary<string, string>();
+
+			Dictionary<string, string> filterComparison = new Dictionary<string, string>() { 
+				{ "Equal", "=" }, 
+				{ "Less", "<" },
+                { "LessEqual", "<=" },
+                { "Greater", ">" },
+                { "GreaterEqual", ">=" },
+				{ "NotEqual", "!=" }
+            };
+
 			string topic = "";
 
 			HashSet<string> npcs = new HashSet<string>();
@@ -124,6 +137,12 @@ namespace SmallScripts {
 				} else if (type == "Dialogue") {
                     topic = rec["id"].Value<string>();
                 } else if (type == "Info") {
+
+					if (rec["quest_name"] != null && rec["quest_name"].Int() == 1) {
+						questNames[topic] = rec["text"].Str();
+					}
+
+
 					if (rec["result"] == null) continue;
 					string result = rec["result"].Value<string>();
 					if (!result.Contains("Journal")) continue;
@@ -135,6 +154,12 @@ namespace SmallScripts {
 
 					string speaker2 = npcCells.ContainsKey(speaker) ? speaker + "|" + npcCells[speaker] : speaker + "|unknown location";
 
+					string filters = "";
+					foreach(var filter in rec["filters"]) {
+						string value = filter["value"]["Integer"] != null ? filter["value"]["Integer"].Int().ToString() : filter["value"]["Float"].Float().ToString();
+                        filters = filters + $"{filter["filter_type"].Str()} {filter["filter_function"].Str()} {filter["id"].Str()} {filterComparison[filter["filter_comparison"].Str()]} {value}|";
+					}
+
 					result.Replace("\\r\\n", "\n");
 
 					foreach (string line in result.Split('\n')) {
@@ -143,7 +168,9 @@ namespace SmallScripts {
 						string[] split = lineNoComment.Split();
 						for (int word = 0; word < split.Length; word++) {
 							if (split[word] == "Journal") {
-								Console.WriteLine($"{split[word + 1].Trim('"')}|{split[word + 2]}|{speaker2}|{faction}|{rankDisplay}|{topic}");
+								string quest = split[word + 1].Trim('"');
+								if (!questDialogues.ContainsKey(quest)) questDialogues[quest] = new List<string>();
+                                questDialogues[quest].Add($"{split[word + 2]}|{speaker2}|{faction}|{rankDisplay}|{topic}|{filters}");
 								word += 2;
 							}
 						}
@@ -151,11 +178,15 @@ namespace SmallScripts {
 					}
 
 				}
-
-
-
 			}
-		}
+
+			foreach(string quest in questDialogues.Keys) {
+                string questName = questNames.ContainsKey(quest) ? questNames[quest] : "";
+				foreach(string dialogue in questDialogues[quest]) {
+					Console.WriteLine($"{quest}|{questName}|{dialogue}");
+				}
+            }
+        }
 
 		public static void MWDoors(string espPath, float cellStartX, float cellStartY, float cellSizeX, float cellSizeY = 0) {
 			if (cellSizeY == 0) cellSizeY = cellSizeX;

@@ -6,6 +6,7 @@ using ImageMagick;
 using ImageMagick.Formats;
 using System.Threading;
 using System.Diagnostics;
+using Newtonsoft.Json.Linq;
 
 namespace SmallScripts {
 	class Program {
