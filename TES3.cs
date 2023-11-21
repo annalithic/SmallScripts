@@ -79,40 +79,61 @@ namespace SmallScripts {
         }
 
         public static void TES3QuestInfo(string espPath) {
+			string topic = "";
 
 			HashSet<string> npcs = new HashSet<string>();
 			Dictionary<string, string> npcCells = new Dictionary<string, string>();
 
 			JArray esp = JArray.Parse(File.ReadAllText(espPath));
 			for (int i = 0; i < esp.Count; i++) {
-				if (esp[i]["type"] == null) continue;
-				string type = esp[i]["type"].Value<string>();
+
+				var rec = esp[i];
+
+				if (rec["type"] == null) continue;
+				string type = rec["type"].Value<string>();
 
 				if (type == "Npc") {
-					npcs.Add(esp[i]["id"].Value<string>());
+					npcs.Add(rec["id"].Value<string>());
 
 				} else if (type == "Cell") {
-					string cellName = esp[i]["id"].Value<string>();
-					foreach (var refr in (JArray)esp[i]["references"]) {
-						string id = refr["id"].Value<string>();
-						if(npcs.Contains(id)) {
-							if (npcCells.ContainsKey(id)) {
-								Console.WriteLine(id + " is in multiple cells");
-							} else {
-								npcCells[id] = cellName;
-                            }
 
-						}
+
+
+					string cellName = rec["id"].Value<string>();
+
+					if (cellName == "" && rec["region"] != null) cellName = rec["region"].Value<string>();
+                    if( (rec["data"]["flags"].Value<int>() & 1) == 0) {
+                        int cellX = esp[i]["data"]["grid"][0].Value<int>();
+                        int cellY = esp[i]["data"]["grid"][1].Value<int>();
+						cellName = cellName + $" ({cellX},{cellY})";
                     }
 
-				} else if (type == "Info") {
-					if (esp[i]["result"] == null) continue;
-					string result = esp[i]["result"].Value<string>();
+
+                    foreach (var refr in (JArray)rec["references"]) {
+						string id = refr["id"].Value<string>();
+						if (npcs.Contains(id)) {
+							if (npcCells.ContainsKey(id)) {
+                                npcCells[id] = "Multiple Cells";
+                            } else {
+								npcCells[id] = cellName;
+							}
+
+						}
+					}
+
+				} else if (type == "Dialogue") {
+                    topic = rec["id"].Value<string>();
+                } else if (type == "Info") {
+					if (rec["result"] == null) continue;
+					string result = rec["result"].Value<string>();
 					if (!result.Contains("Journal")) continue;
 
-					string speaker = (esp[i]["speaker_id"] == null) ? "UNKNOWN" : esp[i]["speaker_id"].Value<string>();
+					string faction = rec["player_faction"] == null ? "" : rec["player_faction"].Value<string>();
+					int rank = rec["data"]["player_rank"].Value<int>();
+					string rankDisplay = rank != -1 ? rank.ToString() : "";
+                    string speaker = (rec["speaker_id"] == null) ? "unknown speaker" : rec["speaker_id"].Value<string>();
 
-					string speaker2 = npcCells.ContainsKey(speaker) ? speaker + "|" + npcCells[speaker] : speaker;
+					string speaker2 = npcCells.ContainsKey(speaker) ? speaker + "|" + npcCells[speaker] : speaker + "|unknown location";
 
 					result.Replace("\\r\\n", "\n");
 
@@ -122,7 +143,7 @@ namespace SmallScripts {
 						string[] split = lineNoComment.Split();
 						for (int word = 0; word < split.Length; word++) {
 							if (split[word] == "Journal") {
-								Console.WriteLine($"{split[word + 1].Trim('"')}|{split[word + 2]}|{speaker2}");
+								Console.WriteLine($"{split[word + 1].Trim('"')}|{split[word + 2]}|{speaker2}|{faction}|{rankDisplay}|{topic}");
 								word += 2;
 							}
 						}

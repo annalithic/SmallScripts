@@ -40,6 +40,11 @@ namespace SmallScripts {
 
 		static void Main(string[] args) {
 
+
+			TES3.TES3QuestInfo(@"E:\Extracted\Morrowind\tes3conv\TR_Mainland.json"); return;
+
+			PoE.LeagueWeeks(); return;
+
 			TES3.LodMeshes(); return;
 
 			List<string> esps = new List<string>() { @"E:\Extracted\Morrowind\morrowind.json", @"E:\Extracted\Morrowind\bloodmoon.json" };
@@ -187,7 +192,6 @@ namespace SmallScripts {
 				File.Copy(file, Path.Combine(@"F:\Extracted\PathOfExile\3.22.Ancestor\bipedS", newname));
             }
 			return;
-			PoE.LeagueWeeks(); return;
 
 			AverageImages(@"F:\Extracted\PathOfExile\4.0.POE2\TrailerFrames\30_SingingCaverns_Monk");
 			return;
