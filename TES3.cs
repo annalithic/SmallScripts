@@ -749,6 +749,90 @@ namespace SmallScripts {
 
         }
 
+        struct Float2 {
+			public float x;
+			public float y;
+        }
+
+        public static void DoorsMerged(string espPath) {
+            int cellSize = 64;
+            int xAdd = 42 * 8192;
+            int yAdd = 38 * 8192;
+
+
+
+			Dictionary<string, List<Float2>> mergePositions = new Dictionary<string, List<Float2>>();
+			Dictionary<string, string> mergeTypes = new Dictionary<string, string>();
+
+            Dictionary<string, string> cellTypes = new Dictionary<string, string>();
+            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypes.txt")) {
+                var split = line.Split('\t');
+                cellTypes[split[0]] = split[1];
+            }
+
+
+            JArray esp = JArray.Parse(File.ReadAllText(espPath));
+            for (int i = 0; i < esp.Count; i++) {
+                if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell") {
+                    string cellName = esp[i]["id"].Value<string>();
+
+
+                    //Console.WriteLine(cellName);
+                    JArray refs = (JArray)esp[i]["references"];
+                    for (int refNum = 0; refNum < refs.Count; refNum++) {
+                        if (refs[refNum]["door_destination_coords"] != null) {
+                            if (refs[refNum]["door_destination_cell"] != null) {
+                                //Console.WriteLine(cellName + " -> " + refs[refNum]["door_destination_cell"].Value<string>());
+                            } else {
+                                JArray coords = (JArray)refs[refNum]["door_destination_coords"];
+                                float x = coords[0].Value<float>();
+                                float y = coords[1].Value<float>();
+                                float xMap = (x + xAdd) * cellSize / 8192;
+                                float yMap = (yAdd - y) * cellSize / 8192;
+
+                                string type = cellTypes.ContainsKey(cellName) ? cellTypes[cellName] : "unknown";
+
+								
+                                int _t = cellName.IndexOf(',');
+								if (_t == -1) _t = cellName.IndexOf(':');
+                                if (_t != -1) {
+                                    string mergeName = cellName.Substring(0, _t);
+                                    if (!mergePositions.ContainsKey(mergeName)) {
+                                        mergePositions[mergeName] = new List<Float2>();
+                                        mergeTypes[mergeName] = type;
+                                    }
+                                    mergePositions[mergeName].Add(new Float2 { x = xMap, y = yMap });
+
+                                } else {
+                                    Console.WriteLine($"<div class=\"icon {type.Substring(0, 3)} {type}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{cellName}\"></div>");
+
+                                }
+                                //Console.WriteLine($"{cellName} -> ({xMap},{yMap})");
+                            }
+                        }
+                    }
+                }
+            }
+
+			foreach(string mergeName in mergePositions.Keys) {
+				float x = 0;
+				float y = 0;
+				var positions = mergePositions[mergeName];
+
+                foreach (Float2 pos in positions) {
+					x += pos.x; y += pos.y;
+				}
+				x /= positions.Count; y /= positions.Count;
+				string type = mergeTypes[mergeName];
+				string markerType = type.Contains("_town") || type.Contains("_city") || type.Contains("_fort") ? "mark" : "icon";
+                Console.WriteLine($"<div class=\"{markerType} {mergeTypes[mergeName].Substring(0, 3)} {mergeTypes[mergeName]}\" style=\"left:{(int)(x + 0.5)};top:{(int)(y + 0.5)};\" title=\"{mergeName}\"></div>");
+
+            }
+            //Console.WriteLine("\r\n\r\n\r\n");
+            //foreach (string cell in cells) Console.WriteLine(cell);
+
+        }
+
         public static void MWDoors(string espPath) {
 			int cellSize = 64;
 			int xAdd = 42 * 8192;
