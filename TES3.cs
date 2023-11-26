@@ -1,15 +1,116 @@
 ﻿using ImageMagick;
 using ImageMagick.Formats;
+using MW;
 using Newtonsoft.Json.Linq;
+using SmallScripts;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using System.IO;
 using System.Linq;
 using Util;
 
+namespace MW {
+	struct QuestStage {
+		public string id;
+		public int stage;
+	}
+    struct QuestReq {
+        public string id;
+		public string comparison;
+        public int stage;
+    }
+
+    class Info {
+		public int choice;
+		string name;
+		public List<int> choiceNumbers;
+		public List<Info> choices;
+		public List<QuestStage> quests;
+        public List<QuestReq> questReqs;
+
+        public string playerFaction;
+        public int playerRank;
+
+        public string topic;
+        public string speaker;
+
+		public string miscFilters;
+
+        static Dictionary<string, string> filterComparison = new Dictionary<string, string>() {
+                { "Equal", "=" },
+                { "Less", "<" },
+                { "LessEqual", "<=" },
+                { "Greater", ">" },
+                { "GreaterEqual", ">=" },
+                { "NotEqual", "!=" }
+        };
+
+        public Info(string topic, JToken info) {
+			this.topic = topic;
+			choice = -1;
+			quests = new List<QuestStage>();
+			questReqs = new List<QuestReq>();
+            choiceNumbers = new List<int>();
+			choices = new List<Info>();
+
+			//if (rec["result"] == null) continue;
+			if (info["result"] != null) {
+                string result = info.Str("result");
+                foreach (string line in result.Split('\n')) {
+					int commentIndex = line.IndexOf(';');
+                    string lineNoComment = commentIndex == -1 ? line : line.Substring(0, commentIndex);
+
+                    string[] split = lineNoComment.SplitQuotes();
+                    for (int word = 0; word < split.Length; word++) {
+                        if (split[word] == "Journal") {
+                            string quest = split[word + 1].Trim('"');
+                            int stage = int.Parse(split[word + 2]);
+							quests.Add(new QuestStage { id = quest, stage = stage });
+                            word += 2;
+                        } else if (split[word] == "Choice") {
+							for(int splitNum = word + 2; splitNum < split.Length; splitNum += 2) {
+								if (split[splitNum - 1] == ":") splitNum++; //AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+								choiceNumbers.Add(int.Parse(split[splitNum]));
+							}
+							break;
+						}
+                    }
+				}
+            }
+
+
+
+
+            playerFaction = info["player_faction"] == null ? "" : info.Str("player_faction");
+            playerRank = info["data"]["player_rank"].Int();
+			speaker = (info["speaker_id"] == null) ? "unknown speaker" : info.Str("speaker_id");
+
+
+
+            miscFilters = "";
+            foreach (var filter in info["filters"]) {
+                string filter_type = filter.Str("filter_type");
+                string filter_function = filter.Str("filter_function");
+                string filter_id = filter.Str("id");
+                string filter_comparison = filterComparison[filter.Str("filter_comparison")];
+                string filter_value = filter["value"]["Integer"] != null ? filter["value"]["Integer"].Int().ToString() : filter["value"]["Float"].Float().ToString();
+
+                if (filter_type == "Journal") {
+					questReqs.Add(new QuestReq { id = filter_id, comparison = filter_comparison, stage = filter["value"]["Integer"].Int() });
+                } else if (filter_function == "Choice") {
+					choice = filter["value"]["Integer"].Int();
+                }
+                miscFilters = miscFilters + $"{filter_type} {filter_function} {filter_id} {filter_comparison} {filter_value}|";
+            }
+        }
+	}
+}
+
 namespace SmallScripts {
 	static class TES3 {
+
 		public static void LodMeshes() {
 			HashSet<string> lines = new HashSet<string>();
 			foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\lodmeshes.txt")) {
@@ -81,24 +182,23 @@ namespace SmallScripts {
 
         public static void TES3QuestInfo(string espPath) {
 
-			Dictionary<string, List<string>> questDialogues = new Dictionary<string, List<string>>();
+			Dictionary<string, List<MW.Info>> questInfos = new Dictionary<string, List<MW.Info>>();
 			Dictionary<string, string> questNames = new Dictionary<string, string>();
 
-			Dictionary<string, string> filterComparison = new Dictionary<string, string>() { 
-				{ "Equal", "=" }, 
-				{ "Less", "<" },
-                { "LessEqual", "<=" },
-                { "Greater", ">" },
-                { "GreaterEqual", ">=" },
-				{ "NotEqual", "!=" }
-            };
+
 
 			string topic = "";
 
 			HashSet<string> npcs = new HashSet<string>();
 			Dictionary<string, string> npcCells = new Dictionary<string, string>();
 
+			Dictionary<int, MW.Info> topicChoices = new Dictionary<int, MW.Info>();
+			List<MW.Info> topicInfos = new List<MW.Info>();
+
 			JArray esp = JArray.Parse(File.ReadAllText(espPath));
+
+			bool inTopic = false;
+
 			for (int i = 0; i < esp.Count; i++) {
 
 				var rec = esp[i];
@@ -106,107 +206,92 @@ namespace SmallScripts {
 				if (rec["type"] == null) continue;
 				string type = rec["type"].Value<string>();
 
-				if (type == "Npc") {
-					npcs.Add(rec["id"].Value<string>());
-
-				} else if (type == "Cell") {
-
-
-
-					string cellName = rec["id"].Value<string>();
-
-					if (cellName == "" && rec["region"] != null) cellName = rec["region"].Value<string>();
-                    if( (rec["data"]["flags"].Value<int>() & 1) == 0) {
-                        int cellX = esp[i]["data"]["grid"][0].Value<int>();
-                        int cellY = esp[i]["data"]["grid"][1].Value<int>();
-						cellName = cellName + $" ({cellX},{cellY})";
+                if (type == "Info") {
+					inTopic = true;
+                    if (rec["quest_name"] != null && rec["quest_name"].Int() == 1) {
+                        questNames[topic] = rec.Str("text");
                     }
 
 
-                    foreach (var refr in (JArray)rec["references"]) {
-						string id = refr["id"].Value<string>();
-						if (npcs.Contains(id)) {
-							if (npcCells.ContainsKey(id)) {
-                                npcCells[id] = "Multiple Cells";
-                            } else {
-								npcCells[id] = cellName;
-							}
+                    MW.Info info = new MW.Info(topic, rec);
 
-						}
-					}
-
-				} else if (type == "Dialogue") {
-                    topic = rec.Str("id");
-                } else if (type == "Info") {
-
-					if (rec["quest_name"] != null && rec["quest_name"].Int() == 1) {
-						questNames[topic] = rec.Str("text");
-					}
-
-					if (rec["result"] == null) continue;
-					string result = rec.Str("result");
-					if (!result.Contains("Journal")) continue;
-
-                    List<string> setjournal = new List<string>();
-                    List<int> setstage = new List<int>();
-
-                    foreach (string line in result.Split('\n')) {
-                        string lineNoComment = line.Split(';')[0];
-
-                        string[] split = lineNoComment.SplitQuotes();
-                        for (int word = 0; word < split.Length; word++) {
-                            if (split[word] == "Journal") {
-                                string quest = split[word + 1].Trim('"');
-								int stage = int.Parse(split[word + 2]);
-								setjournal.Add(quest); setstage.Add(stage);
-                                word += 2;
+                    if (info.choice == -1) {
+                        //if the info sets a quest stage and doesn't require stages of the same quest, add it to the list of starters for that quest (should recursively check choices too)
+                        foreach (MW.QuestStage quest in info.quests) {
+                            bool starter = true;
+                            foreach (MW.QuestReq req in info.questReqs) {
+                                if (req.id == quest.id && !(req.comparison[0] == '<' || req.stage == 0)) { //if comparison is less than, evaluates true if don't have quest already
+                                    starter = false; break;
+                                }
+                            }
+                            if (starter) {
+                                if (!questInfos.ContainsKey(quest.id)) questInfos[quest.id] = new List<MW.Info>();
+                                questInfos[quest.id].Add(info);
                             }
                         }
+                    } else {
+                        topicChoices[info.choice] = info;
                     }
-
-
-                    string faction = rec["player_faction"] == null ? "" : rec["player_faction"].Value<string>();
-					int rank = rec["data"]["player_rank"].Value<int>();
-					string rankDisplay = rank != -1 ? rank.ToString() : "";
-                    string speaker = (rec["speaker_id"] == null) ? "unknown speaker" : rec["speaker_id"].Value<string>();
-
-					string speaker2 = npcCells.ContainsKey(speaker) ? speaker + "|" + npcCells[speaker] : speaker + "|unknown location";
-
-					bool starts = true;
-
-					string filters = "";
-					foreach(var filter in rec["filters"]) {
-						string filter_type = filter["filter_type"].Str();
-						string filter_function = filter["filter_function"].Str();
-						string filter_id = filter["id"].Str();
-						string filter_comparison = filterComparison[filter["filter_comparison"].Str()];
-                        string filter_value = filter["value"]["Integer"] != null ? filter["value"]["Integer"].Int().ToString() : filter["value"]["Float"].Float().ToString();
-
-						if(filter_type == "Journal") {
-                            foreach (string journal in setjournal) {
-                                if (filter_id == journal && !(filter_comparison[0] == '<')) { //less than always works if quest is not active
-									starts = false;
-								}
+                } else {
+					if(inTopic) { //ended list of topic infos
+                        foreach (Info info in topicInfos) {
+                            foreach (int choiceNum in info.choiceNumbers) {
+								info.choices.Add(topicChoices[choiceNum]);
 							}
                         }
-
-                        filters = filters + $"{filter_type} {filter_function} {filter_id} {filter_type} {filter_value}|";
-					}
-
-					if (starts == false) continue;
-					for(int j = 0; j < setjournal.Count; j++) {
-						string quest = setjournal[j];
-						int stage = setstage[j];
-                        if (!questDialogues.ContainsKey(quest)) questDialogues[quest] = new List<string>();
-                        questDialogues[quest].Add($"{stage}|{speaker2}|{faction}|{rankDisplay}|{topic}|{filters}");
+                        topicInfos.Clear();
+                        topicChoices.Clear();
                     }
-				}
-			}
 
-			foreach(string quest in questDialogues.Keys) {
+                    if (type == "Npc") {
+                        npcs.Add(rec["id"].Value<string>());
+
+                    } else if (type == "Cell") {
+
+
+
+                        string cellName = rec["id"].Value<string>();
+
+                        if (cellName == "" && rec["region"] != null) cellName = rec["region"].Value<string>();
+                        if ((rec["data"]["flags"].Value<int>() & 1) == 0) {
+                            int cellX = esp[i]["data"]["grid"][0].Value<int>();
+                            int cellY = esp[i]["data"]["grid"][1].Value<int>();
+                            cellName = cellName + $" ({cellX},{cellY})";
+                        }
+
+
+                        foreach (var refr in (JArray)rec["references"]) {
+                            string id = refr["id"].Value<string>();
+                            if (npcs.Contains(id)) {
+                                if (npcCells.ContainsKey(id)) {
+                                    npcCells[id] = "Multiple Cells";
+                                } else {
+                                    npcCells[id] = cellName;
+                                }
+
+                            }
+                        }
+
+                    } else if (type == "Dialogue") {
+                        topic = rec.Str("id");
+                    }
+                }
+
+            }
+
+
+
+            foreach (string quest in questInfos.Keys) {
                 string questName = questNames.ContainsKey(quest) ? questNames[quest] : "";
-				foreach(string dialogue in questDialogues[quest]) {
-					Console.WriteLine($"{quest}|{questName}|{dialogue}");
+				foreach(MW.Info info in questInfos[quest]) {
+					foreach(MW.QuestStage questStage in info.quests) {
+						if (questStage.id != quest) continue;
+
+                        string location = npcCells.ContainsKey(info.speaker) ? npcCells[info.speaker] : "unknown location";
+
+                        Console.WriteLine($"{quest}|{questName}|{questStage.stage}|{info.speaker}|{location}|{info.playerFaction}|{info.playerRank}|{info.topic}|{info.miscFilters}");
+						break;
+					}
 				}
             }
         }
