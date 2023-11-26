@@ -40,7 +40,9 @@ namespace SmallScripts {
         }
 
 		static void Main(string[] args) {
-            TES3.DoorsMerged(@"E:\Extracted\Morrowind\trmainland.json"); return;
+            //TES3.DoorsMerged(@"E:\Extracted\Morrowind\trmainland.json"); return;
+
+            TES3.TES3QuestInfo(@"E:\Extracted\Morrowind\bloodmoon.json"); return;
 
             TES3.TES3QuestInfo(@"E:\Extracted\Morrowind\tes3conv\TR_Mainland.json"); return;
 

@@ -2,6 +2,7 @@
 using ImageMagick.Formats;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -135,48 +136,70 @@ namespace SmallScripts {
 					}
 
 				} else if (type == "Dialogue") {
-                    topic = rec["id"].Value<string>();
+                    topic = rec.Str("id");
                 } else if (type == "Info") {
 
 					if (rec["quest_name"] != null && rec["quest_name"].Int() == 1) {
-						questNames[topic] = rec["text"].Str();
+						questNames[topic] = rec.Str("text");
 					}
 
-
 					if (rec["result"] == null) continue;
-					string result = rec["result"].Value<string>();
+					string result = rec.Str("result");
 					if (!result.Contains("Journal")) continue;
 
-					string faction = rec["player_faction"] == null ? "" : rec["player_faction"].Value<string>();
+                    List<string> setjournal = new List<string>();
+                    List<int> setstage = new List<int>();
+
+                    foreach (string line in result.Split('\n')) {
+                        string lineNoComment = line.Split(';')[0];
+
+                        string[] split = lineNoComment.SplitQuotes();
+                        for (int word = 0; word < split.Length; word++) {
+                            if (split[word] == "Journal") {
+                                string quest = split[word + 1].Trim('"');
+								int stage = int.Parse(split[word + 2]);
+								setjournal.Add(quest); setstage.Add(stage);
+                                word += 2;
+                            }
+                        }
+                    }
+
+
+                    string faction = rec["player_faction"] == null ? "" : rec["player_faction"].Value<string>();
 					int rank = rec["data"]["player_rank"].Value<int>();
 					string rankDisplay = rank != -1 ? rank.ToString() : "";
                     string speaker = (rec["speaker_id"] == null) ? "unknown speaker" : rec["speaker_id"].Value<string>();
 
 					string speaker2 = npcCells.ContainsKey(speaker) ? speaker + "|" + npcCells[speaker] : speaker + "|unknown location";
 
+					bool starts = true;
+
 					string filters = "";
 					foreach(var filter in rec["filters"]) {
-						string value = filter["value"]["Integer"] != null ? filter["value"]["Integer"].Int().ToString() : filter["value"]["Float"].Float().ToString();
-                        filters = filters + $"{filter["filter_type"].Str()} {filter["filter_function"].Str()} {filter["id"].Str()} {filterComparison[filter["filter_comparison"].Str()]} {value}|";
-					}
+						string filter_type = filter["filter_type"].Str();
+						string filter_function = filter["filter_function"].Str();
+						string filter_id = filter["id"].Str();
+						string filter_comparison = filterComparison[filter["filter_comparison"].Str()];
+                        string filter_value = filter["value"]["Integer"] != null ? filter["value"]["Integer"].Int().ToString() : filter["value"]["Float"].Float().ToString();
 
-					result.Replace("\\r\\n", "\n");
-
-					foreach (string line in result.Split('\n')) {
-						string lineNoComment = line.Split(';')[0];
-
-						string[] split = lineNoComment.Split();
-						for (int word = 0; word < split.Length; word++) {
-							if (split[word] == "Journal") {
-								string quest = split[word + 1].Trim('"');
-								if (!questDialogues.ContainsKey(quest)) questDialogues[quest] = new List<string>();
-                                questDialogues[quest].Add($"{split[word + 2]}|{speaker2}|{faction}|{rankDisplay}|{topic}|{filters}");
-								word += 2;
+						if(filter_type == "Journal") {
+                            foreach (string journal in setjournal) {
+                                if (filter_id == journal && !(filter_comparison[0] == '<')) { //less than always works if quest is not active
+									starts = false;
+								}
 							}
-						}
+                        }
 
+                        filters = filters + $"{filter_type} {filter_function} {filter_id} {filter_type} {filter_value}|";
 					}
 
+					if (starts == false) continue;
+					for(int j = 0; j < setjournal.Count; j++) {
+						string quest = setjournal[j];
+						int stage = setstage[j];
+                        if (!questDialogues.ContainsKey(quest)) questDialogues[quest] = new List<string>();
+                        questDialogues[quest].Add($"{stage}|{speaker2}|{faction}|{rankDisplay}|{topic}|{filters}");
+                    }
 				}
 			}
 
