@@ -140,6 +140,22 @@ namespace SmallScripts {
 			Dictionary<string, string> statics = new Dictionary<string, string>();
 			Dictionary<string, int> meshCounts = new Dictionary<string, int>();
 
+			HashSet<string> rockMeshes = new HashSet<string>();
+            HashSet<string> structureMeshes = new HashSet<string>();
+
+            {
+                string rockDistFolder = @"C:\Games\MorrowindMods\lodtest\meshes";
+                foreach (string file in Directory.EnumerateFiles(rockDistFolder, "*.nif", SearchOption.AllDirectories)) {
+					string mesh = file.Substring(rockDistFolder.Length).Replace("_dist.nif", ".nif");
+					rockMeshes.Add(mesh);
+				}
+                string structurefolder = @"C:\Games\MorrowindMods\lodstructure\meshes";
+                foreach (string file in Directory.EnumerateFiles(structurefolder, "*.nif", SearchOption.AllDirectories)) {
+                    string mesh = file.Substring(structurefolder.Length).Replace("_dist.nif", ".nif");
+                    structureMeshes.Add(mesh);
+                }
+
+            }
 
             Console.WriteLine("STATS....");
             foreach (string espPath in espPaths) {
@@ -174,10 +190,17 @@ namespace SmallScripts {
 
 			Console.WriteLine("\r\n\r\n");
 			foreach (string stat in statics.Keys)
-				if (meshCounts.ContainsKey(statics[stat]))
-					Console.WriteLine($"{stat}|{statics[stat]}|{meshCounts[statics[stat]]}");
-			
-			
+				if (meshCounts.ContainsKey(statics[stat])) {
+					string mesh = statics[stat];
+
+                    string type = ""; 
+					if (rockMeshes.Contains(mesh)) type = "rock_far";
+                    if (structureMeshes.Contains(mesh)) type = "build_far";
+
+                    Console.WriteLine($"{stat}|{mesh}|{meshCounts[statics[stat]]}|{type}");
+                }
+
+
         }
 
         public static void TES3QuestInfo(string espPath) {
