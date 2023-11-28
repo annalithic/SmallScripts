@@ -146,12 +146,12 @@ namespace SmallScripts {
             {
                 string rockDistFolder = @"C:\Games\MorrowindMods\lodtest\meshes";
                 foreach (string file in Directory.EnumerateFiles(rockDistFolder, "*.nif", SearchOption.AllDirectories)) {
-					string mesh = file.Substring(rockDistFolder.Length).Replace("_dist.nif", ".nif");
+					string mesh = file.Substring(rockDistFolder.Length + 1).Replace("_dist.nif", ".nif");
 					rockMeshes.Add(mesh);
 				}
                 string structurefolder = @"C:\Games\MorrowindMods\lodstructure\meshes";
                 foreach (string file in Directory.EnumerateFiles(structurefolder, "*.nif", SearchOption.AllDirectories)) {
-                    string mesh = file.Substring(structurefolder.Length).Replace("_dist.nif", ".nif");
+                    string mesh = file.Substring(structurefolder.Length + 1).Replace("_dist.nif", ".nif");
                     structureMeshes.Add(mesh);
                 }
 
