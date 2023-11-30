@@ -4,12 +4,11 @@ using MW;
 using Newtonsoft.Json.Linq;
 using SmallScripts;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Tracing;
 using System.IO;
 using System.Linq;
 using Util;
+using System.Diagnostics;
 
 namespace MW {
 	struct QuestStage {
@@ -111,7 +110,111 @@ namespace MW {
 namespace SmallScripts {
 	static class TES3 {
 
-		public static void LodMeshes() {
+		//the tech keeps changing!
+		static string[] lodLevelTextures = { "sml.dds", "mid.dds", "far.dds" };
+        static string[] lodLevelFolders = {
+            @"C:\Games\MorrowindMods\lodrocksmall\meshes",
+            @"C:\Games\MorrowindMods\lodrockmid\meshes",
+            @"C:\Games\MorrowindMods\lodrockfar\meshes",
+        };
+
+        public static void LodMeshes3() {
+
+			
+
+			Dictionary<string, int> meshLodLevels = new Dictionary<string, int>();
+
+            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\lodmeshes3.txt")) {
+                string[] split = line.Split('\t');
+				if (split.Length < 8) {
+					continue;
+				}
+
+
+                if (split[6] != "rock") continue;
+
+                string mesh = split[1];
+
+				int level = 0; if (split[7] == "mid") level = 1; else if (split[7] == "far") level = 2;
+				if(!meshLodLevels.ContainsKey(mesh) || level > meshLodLevels[mesh]) meshLodLevels[mesh] = level;
+            }
+
+			foreach(string mesh in meshLodLevels.Keys) {
+				bool convert = true;
+				int lodLevel = meshLodLevels[mesh];
+
+                string destSuffix = mesh.Substring(0, mesh.Length - 4) + "_dist.nif";
+				for(int i = 0; i < lodLevelFolders.Length; i++) {
+					string path = Path.Combine(lodLevelFolders[i], destSuffix);
+                    if (File.Exists(path)) {
+						if(i == lodLevel) {
+							convert = false;
+						} else {
+							Console.WriteLine("DELETING FILE " + mesh);
+							File.Delete(path);
+						}
+					}
+				}
+				if (!convert) continue;
+
+                string dest = Path.Combine(lodLevelFolders[lodLevel], destSuffix);
+
+                string file = Path.Combine(@"C:\Games\MorrowindMods\Morrowind Optimization Patch\00 Core\meshes", mesh);
+                if (!File.Exists(file)) file = Path.Combine(@"C:\Games\MorrowindMods\TD_Addon\01 TR BSA\meshes", mesh);
+                if (!File.Exists(file)) file = Path.Combine(@"E:\Extracted\Morrowind\TR\meshes", mesh);
+                if (!File.Exists(file)) file = Path.Combine(@"E:\Extracted\Morrowind\VANILLA\meshes", mesh);
+                if (!File.Exists(file)) {
+                    Console.WriteLine("MISSING FILE    " + mesh);
+                    continue;
+                }
+                //if (!File.Exists(dest)) {
+                Console.WriteLine(dest);
+                if (!Directory.Exists(Path.GetDirectoryName(dest))) Directory.CreateDirectory(Path.GetDirectoryName(dest));
+                //File.Copy(file, dest);
+                Process process = new Process();
+                process.StartInfo.FileName = @"E:\Programs\Python3.9\python.exe";
+                process.StartInfo.Arguments = $@" ""E:\Anna\Anna\Visual Studio\PythonScripts\texreplace.py"" ""{file}"" ""{dest}"" ""{lodLevelTextures[lodLevel]}""";
+                process.StartInfo.CreateNoWindow = true;
+				process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                process.Start();
+                process.WaitForExit();// Waits here for the process to exit.
+
+                //}
+
+            }
+        }
+
+        public static void LodMeshes2() {
+
+            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\lodmeshes2.txt")) {
+				string[] split = line.Split('\t'); 
+				if (split.Length < 5) {
+					continue;
+				}
+				if (split[3] != "rock" || !(split[4] == "far" || split[4] == "mid")) continue;
+
+				string mesh = split[1];
+
+                string file = Path.Combine(@"C:\Games\MorrowindMods\Morrowind Optimization Patch\00 Core\meshes", mesh);
+                if (!File.Exists(file)) file = Path.Combine(@"C:\Games\MorrowindMods\TD_Addon\01 TR BSA\meshes", mesh);
+                if (!File.Exists(file)) file = Path.Combine(@"E:\Extracted\Morrowind\TR\meshes", mesh);
+                if (!File.Exists(file)) file = Path.Combine(@"E:\Extracted\Morrowind\VANILLA\meshes", mesh);
+                if (!File.Exists(file)) {
+                    Console.WriteLine("MISSING FILE    " + mesh);
+                    continue;
+                }
+                string dest = Path.Combine(@"C:\Games\MorrowindMods\lodtest\meshes", mesh.Substring(0, mesh.Length - 4) + "_dist.nif");
+                if (!File.Exists(dest)) {
+                    Console.WriteLine(dest);
+                    if (!Directory.Exists(Path.GetDirectoryName(dest))) Directory.CreateDirectory(Path.GetDirectoryName(dest));
+                    File.Copy(file, dest);
+                }
+
+            }
+        }
+
+
+        public static void LodMeshes() {
 			HashSet<string> lines = new HashSet<string>();
 			foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\lodmeshes.txt")) {
 				if(line.Length > 0) lines.Add(line);
@@ -137,7 +240,18 @@ namespace SmallScripts {
 		}
 
 		public static void TES3StaticList(params string[] espPaths) {
-			Dictionary<string, string> statics = new Dictionary<string, string>();
+
+            Dictionary<string, int> meshTris = new Dictionary<string, int>();
+            Dictionary<string, int> meshSizes = new Dictionary<string, int>();
+
+            foreach (string line in File.ReadAllLines(@"E:\Anna\Anna\Visual Studio\PythonScripts\meshstats.txt")) {
+                string[] words = line.Split('|');
+				string mesh = words[0].ToLower();
+                meshTris[mesh] = int.Parse(words[1]);
+                meshSizes[mesh] = (int)Math.Sqrt(double.Parse(words[3]));
+            }
+
+            Dictionary<string, string> statics = new Dictionary<string, string>();
 			Dictionary<string, int> meshCounts = new Dictionary<string, int>();
 
 			HashSet<string> rockMeshes = new HashSet<string>();
@@ -146,12 +260,12 @@ namespace SmallScripts {
             {
                 string rockDistFolder = @"C:\Games\MorrowindMods\lodtest\meshes";
                 foreach (string file in Directory.EnumerateFiles(rockDistFolder, "*.nif", SearchOption.AllDirectories)) {
-					string mesh = file.Substring(rockDistFolder.Length + 1).Replace("_dist.nif", ".nif");
+					string mesh = file.Substring(rockDistFolder.Length + 1).ToLower().Replace("_dist.nif", ".nif");
 					rockMeshes.Add(mesh);
 				}
                 string structurefolder = @"C:\Games\MorrowindMods\lodstructure\meshes";
                 foreach (string file in Directory.EnumerateFiles(structurefolder, "*.nif", SearchOption.AllDirectories)) {
-                    string mesh = file.Substring(structurefolder.Length + 1).Replace("_dist.nif", ".nif");
+                    string mesh = file.Substring(structurefolder.Length + 1).ToLower().Replace("_dist.nif", ".nif");
                     structureMeshes.Add(mesh);
                 }
 
@@ -162,9 +276,9 @@ namespace SmallScripts {
 				Console.WriteLine(espPath);
 				JArray esp = JArray.Parse(File.ReadAllText(espPath));
                 for (int i = 0; i < esp.Count; i++) {
-                    if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Static") {
-                        string id = esp[i]["id"].Value<string>();
-                        string mesh = esp[i]["mesh"].Value<string>();
+                    if (esp[i]["type"] != null && esp[i].Str("type") == "Static") {
+                        string id = esp[i].Str("id");
+                        string mesh = esp[i].Str("mesh").ToLower();
 						statics[id] = mesh;
                     }
                 }
@@ -196,8 +310,12 @@ namespace SmallScripts {
                     string type = ""; 
 					if (rockMeshes.Contains(mesh)) type = "rock_far";
                     if (structureMeshes.Contains(mesh)) type = "build_far";
+					int meshCount =  meshCounts[statics[stat]];
+					int triCount = meshTris.ContainsKey(mesh) ? meshTris[mesh] : 0;
+					int meshSize = meshSizes.ContainsKey(mesh) ? meshSizes[mesh] : 0;
 
-                    Console.WriteLine($"{stat}|{mesh}|{meshCounts[statics[stat]]}|{type}");
+
+                    Console.WriteLine($"{stat}|{mesh}|{meshCount}|{meshCount * triCount}|{triCount}|{meshSize}|{type}");
                 }
 
 
@@ -1177,7 +1295,8 @@ namespace SmallScripts {
 
 		static void ListMWRefs2(int heatmapMax, params string[] espPaths) {
 
-			Dictionary<string, (int, int)> meshes = new Dictionary<string, (int, int)>();
+
+            Dictionary<string, (int, int)> meshes = new Dictionary<string, (int, int)>();
 			foreach (string line in File.ReadAllLines(@"E:\Anna\Desktop\io_scene_mw\lib\meshes.txt")) {
 				string[] words = line.Split('|');
 				meshes[words[0]] = (int.Parse(words[1]), int.Parse(words[2]));

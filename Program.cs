@@ -48,7 +48,7 @@ namespace SmallScripts {
 
 			//PoE.LeagueWeeks(); return;
 
-			//TES3.LodMeshes(); return;
+			TES3.LodMeshes3(); return;
 
 			List<string> esps = new List<string>() { @"E:\Extracted\Morrowind\morrowind.json", @"E:\Extracted\Morrowind\bloodmoon.json" };
 			foreach (string path in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\tes3conv", "*.json")) esps.Add(path);
