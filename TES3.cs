@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using Util;
 using System.Diagnostics;
+using System.Text;
 
 namespace MW {
 	struct QuestStage {
@@ -116,6 +117,9 @@ namespace SmallScripts {
             @"C:\Games\MorrowindMods\lodrocksmall\meshes",
             @"C:\Games\MorrowindMods\lodrockmid\meshes",
             @"C:\Games\MorrowindMods\lodrockfar\meshes",
+            @"C:\Games\MorrowindMods\lodtreesmall\meshes",
+            @"C:\Games\MorrowindMods\lodtreemid\meshes",
+            @"C:\Games\MorrowindMods\lodtreefar\meshes",
         };
 
         public static void LodMeshes3() {
@@ -130,12 +134,18 @@ namespace SmallScripts {
 					continue;
 				}
 
+				int folderOffset = -1;
 
-                if (split[6] != "rock") continue;
+                if (split[6] == "rock") folderOffset = 0;
+                else if (split[6] == "tree") folderOffset = 3;
+
+				if (folderOffset == -1) continue;
+
 
                 string mesh = split[1];
 
-				int level = 0; if (split[7] == "mid") level = 1; else if (split[7] == "far") level = 2;
+				int level = folderOffset; if (split[7] == "mid") level += 1; else if (split[7] == "far") level += 2;
+
 				if(!meshLodLevels.ContainsKey(mesh) || level > meshLodLevels[mesh]) meshLodLevels[mesh] = level;
             }
 
@@ -173,7 +183,7 @@ namespace SmallScripts {
                 //File.Copy(file, dest);
                 Process process = new Process();
                 process.StartInfo.FileName = @"E:\Programs\Python3.9\python.exe";
-                process.StartInfo.Arguments = $@" ""E:\Anna\Anna\Visual Studio\PythonScripts\texreplace.py"" ""{file}"" ""{dest}"" ""{lodLevelTextures[lodLevel]}""";
+                process.StartInfo.Arguments = $@" ""E:\Anna\Anna\Visual Studio\PythonScripts\texreplace.py"" ""{file}"" ""{dest}"" ""{lodLevelTextures[lodLevel % 3]}""";
                 process.StartInfo.CreateNoWindow = true;
 				process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 process.Start();
@@ -240,6 +250,20 @@ namespace SmallScripts {
 		}
 
 		public static void TES3StaticList(params string[] espPaths) {
+			HashSet<string> staticFormTypes = new HashSet<string> { "Static", "Activator", "Container", "Door", };
+
+			Dictionary<string, string> meshLodData = new Dictionary<string, string>();
+            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\lodmeshes3.txt")) {
+				StringBuilder lodData = new StringBuilder();
+                string[] split = line.Split('\t');
+				string mesh = split[1];
+				if (split.Length > 6) lodData.Append(split[6] + "|");
+                if (split.Length > 7) lodData.Append(split[7] + "|");
+                if (split.Length > 8) lodData.Append(split[8] + "|");
+                if (split.Length > 9) lodData.Append(split[9] + "|");
+				if (lodData.Length > 0) meshLodData[mesh] = lodData.ToString();
+            }
+
 
             Dictionary<string, int> meshTris = new Dictionary<string, int>();
             Dictionary<string, int> meshSizes = new Dictionary<string, int>();
@@ -251,35 +275,21 @@ namespace SmallScripts {
                 meshSizes[mesh] = (int)Math.Sqrt(double.Parse(words[3]));
             }
 
-            Dictionary<string, string> statics = new Dictionary<string, string>();
-			Dictionary<string, int> meshCounts = new Dictionary<string, int>();
-
-			HashSet<string> rockMeshes = new HashSet<string>();
-            HashSet<string> structureMeshes = new HashSet<string>();
-
-            {
-                string rockDistFolder = @"C:\Games\MorrowindMods\lodtest\meshes";
-                foreach (string file in Directory.EnumerateFiles(rockDistFolder, "*.nif", SearchOption.AllDirectories)) {
-					string mesh = file.Substring(rockDistFolder.Length + 1).ToLower().Replace("_dist.nif", ".nif");
-					rockMeshes.Add(mesh);
-				}
-                string structurefolder = @"C:\Games\MorrowindMods\lodstructure\meshes";
-                foreach (string file in Directory.EnumerateFiles(structurefolder, "*.nif", SearchOption.AllDirectories)) {
-                    string mesh = file.Substring(structurefolder.Length + 1).ToLower().Replace("_dist.nif", ".nif");
-                    structureMeshes.Add(mesh);
-                }
-
-            }
+			Dictionary<string, List<string>> meshForms = new Dictionary<string, List<string>>();
+            Dictionary<string, int> formCounts = new Dictionary<string, int>();
 
             Console.WriteLine("STATS....");
             foreach (string espPath in espPaths) {
 				Console.WriteLine(espPath);
 				JArray esp = JArray.Parse(File.ReadAllText(espPath));
                 for (int i = 0; i < esp.Count; i++) {
-                    if (esp[i]["type"] != null && esp[i].Str("type") == "Static") {
-                        string id = esp[i].Str("id");
-                        string mesh = esp[i].Str("mesh").ToLower();
-						statics[id] = mesh;
+					var entry = esp[i];
+                    if (entry["type"] != null && staticFormTypes.Contains(entry.Str("type")) && entry["id"] != null && entry["mesh"] != null)  {
+                        string id = entry.Str("id");
+                        string mesh = entry.Str("mesh").ToLower();
+						if (!meshForms.ContainsKey(mesh)) meshForms[mesh] = new List<string>();
+                        meshForms[mesh].Add(id);
+                        formCounts[id] = 0;
                     }
                 }
             }
@@ -294,31 +304,35 @@ namespace SmallScripts {
                         JArray refs = (JArray)esp[i]["references"];
                         for (int refNum = 0; refNum < refs.Count; refNum++) {
                             string id = refs[refNum]["id"].Value<string>();
-							if (!statics.ContainsKey(id)) continue;
-							if (!meshCounts.ContainsKey(statics[id])) meshCounts[statics[id]] = 0;
-							meshCounts[statics[id]]++;
+							if (!formCounts.ContainsKey(id)) continue;
+							formCounts[id]++;
                         }
                     }
                 }
             }
 
 			Console.WriteLine("\r\n\r\n");
-			foreach (string stat in statics.Keys)
-				if (meshCounts.ContainsKey(statics[stat])) {
-					string mesh = statics[stat];
 
-                    string type = ""; 
-					if (rockMeshes.Contains(mesh)) type = "rock_far";
-                    if (structureMeshes.Contains(mesh)) type = "build_far";
-					int meshCount =  meshCounts[statics[stat]];
-					int triCount = meshTris.ContainsKey(mesh) ? meshTris[mesh] : 0;
-					int meshSize = meshSizes.ContainsKey(mesh) ? meshSizes[mesh] : 0;
+			foreach (string mesh in meshForms.Keys) {
+				int meshCount = 0;
+				string modalForm = "";
+				int modalCount = -1;
+				for(int i = 0; i < meshForms[mesh].Count; i++) {
+					string form = meshForms[mesh][i];
+					int formCount = formCounts[form];
+					if(formCount > modalCount) {
+						modalCount = formCount;
+						modalForm = form;
+					}
+					meshCount += formCount;
+				}
+				if (meshCount == 0) continue;
+                string lodData = meshLodData.ContainsKey(mesh) ? meshLodData[mesh] : "";
+                int triCount = meshTris.ContainsKey(mesh) ? meshTris[mesh] : 0;
+                int meshSize = meshSizes.ContainsKey(mesh) ? meshSizes[mesh] : 0;
 
-
-                    Console.WriteLine($"{stat}|{mesh}|{meshCount}|{meshCount * triCount}|{triCount}|{meshSize}|{type}");
-                }
-
-
+                Console.WriteLine($"{modalForm}|{mesh}|{meshCount}|{meshCount * triCount}|{triCount}|{meshSize}|{lodData}");
+            }
         }
 
         public static void TES3QuestInfo(string espPath) {

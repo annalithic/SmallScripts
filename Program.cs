@@ -40,15 +40,17 @@ namespace SmallScripts {
         }
 
 		static void Main(string[] args) {
+
+
             //TES3.DoorsMerged(@"E:\Extracted\Morrowind\trmainland.json"); return;
 
             //TES3.TES3QuestInfo(@"E:\Extracted\Morrowind\bloodmoon.json"); return;
 
             //TES3.TES3QuestInfo(@"E:\Extracted\Morrowind\tes3conv\TR_Mainland.json"); return;
 
-			//PoE.LeagueWeeks(); return;
+            //PoE.LeagueWeeks(); return;
 
-			TES3.LodMeshes3(); return;
+            //TES3.LodMeshes3(); return;
 
 			List<string> esps = new List<string>() { @"E:\Extracted\Morrowind\morrowind.json", @"E:\Extracted\Morrowind\bloodmoon.json" };
 			foreach (string path in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\tes3conv", "*.json")) esps.Add(path);
