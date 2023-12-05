@@ -120,6 +120,10 @@ namespace SmallScripts {
             @"C:\Games\MorrowindMods\lodtreesmall\meshes",
             @"C:\Games\MorrowindMods\lodtreemid\meshes",
             @"C:\Games\MorrowindMods\lodtreefar\meshes",
+            @"C:\Games\MorrowindMods\lodbuildsmall\meshes",
+            @"C:\Games\MorrowindMods\lodbuildmid\meshes",
+            @"C:\Games\MorrowindMods\lodbuildfar\meshes",
+
         };
 
         public static void LodMeshes3() {
@@ -134,17 +138,24 @@ namespace SmallScripts {
 					continue;
 				}
 
+				if (split[10] != "mw") {
+					//Console.WriteLine(split[10]);
+					continue; //temp
+				}
+
 				int folderOffset = -1;
 
-                if (split[6] == "rock") folderOffset = 0;
-                else if (split[6] == "tree") folderOffset = 3;
-
-				if (folderOffset == -1) continue;
+				string type = split[8];
+                if (type == "rock") folderOffset = 0;
+                else if (type == "tree") folderOffset = 3;
+                else if (type == "build") folderOffset = 6;
+                if (folderOffset == -1) continue;
 
 
                 string mesh = split[1];
 
-				int level = folderOffset; if (split[7] == "mid") level += 1; else if (split[7] == "far") level += 2;
+				string levelStr = split[9];
+				int level = folderOffset; if (levelStr == "mid") level += 1; else if (levelStr == "far") level += 2;
 
 				if(!meshLodLevels.ContainsKey(mesh) || level > meshLodLevels[mesh]) meshLodLevels[mesh] = level;
             }
@@ -277,6 +288,8 @@ namespace SmallScripts {
 
 			Dictionary<string, List<string>> meshForms = new Dictionary<string, List<string>>();
             Dictionary<string, int> formCounts = new Dictionary<string, int>();
+            Dictionary<string, int> formCountsTR = new Dictionary<string, int>();
+
 
             Console.WriteLine("STATS....");
             foreach (string espPath in espPaths) {
@@ -290,12 +303,14 @@ namespace SmallScripts {
 						if (!meshForms.ContainsKey(mesh)) meshForms[mesh] = new List<string>();
                         meshForms[mesh].Add(id);
                         formCounts[id] = 0;
+						formCountsTR[id] = 0;
                     }
                 }
             }
 
 			Console.WriteLine("REFS....");
             foreach (string espPath in espPaths) {
+                bool tr = !(Path.GetFileNameWithoutExtension(espPath) == "morrowind" || Path.GetFileNameWithoutExtension(espPath) == "bloodmoon");
                 Console.WriteLine(espPath);
                 JArray esp = JArray.Parse(File.ReadAllText(espPath));
                 for (int i = 0; i < esp.Count; i++) {
@@ -305,7 +320,8 @@ namespace SmallScripts {
                         for (int refNum = 0; refNum < refs.Count; refNum++) {
                             string id = refs[refNum]["id"].Value<string>();
 							if (!formCounts.ContainsKey(id)) continue;
-							formCounts[id]++;
+							if (tr) formCountsTR[id]++;
+							else formCounts[id]++;
                         }
                     }
                 }
@@ -315,7 +331,9 @@ namespace SmallScripts {
 
 			foreach (string mesh in meshForms.Keys) {
 				int meshCount = 0;
-				string modalForm = "";
+                int trMeshCount = 0;
+
+                string modalForm = "";
 				int modalCount = -1;
 				for(int i = 0; i < meshForms[mesh].Count; i++) {
 					string form = meshForms[mesh][i];
@@ -326,12 +344,21 @@ namespace SmallScripts {
 					}
 					meshCount += formCount;
 				}
-				if (meshCount == 0) continue;
+                for (int i = 0; i < meshForms[mesh].Count; i++) {
+                    string form = meshForms[mesh][i];
+                    int formCount = formCountsTR[form];
+                    if (formCount > modalCount) {
+                        modalCount = formCount;
+                        modalForm = form;
+                    }
+                    trMeshCount += formCount;
+                }
+                if (meshCount == 0 && trMeshCount == 0) continue;
                 string lodData = meshLodData.ContainsKey(mesh) ? meshLodData[mesh] : "";
                 int triCount = meshTris.ContainsKey(mesh) ? meshTris[mesh] : 0;
                 int meshSize = meshSizes.ContainsKey(mesh) ? meshSizes[mesh] : 0;
 
-                Console.WriteLine($"{modalForm}|{mesh}|{meshCount}|{meshCount * triCount}|{triCount}|{meshSize}|{lodData}");
+                Console.WriteLine($"{modalForm}|{mesh}|{meshCount}|{trMeshCount}|{meshCount * triCount}|{trMeshCount * triCount}|{triCount}|{meshSize}|{lodData}".TrimEnd('|'));
             }
         }
 
