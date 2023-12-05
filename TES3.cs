@@ -10,6 +10,7 @@ using System.Linq;
 using Util;
 using System.Diagnostics;
 using System.Text;
+using System.Runtime.CompilerServices;
 
 namespace MW {
 	struct QuestStage {
@@ -125,6 +126,59 @@ namespace SmallScripts {
             @"C:\Games\MorrowindMods\lodbuildfar\meshes",
 
         };
+
+        public static void MeshTextures(string set) {
+
+			HashSet<string> meshes = new HashSet<string>();
+			Dictionary<string, int> texCounts = new Dictionary<string, int>();
+            Dictionary<string, List<string>> texMeshes = new Dictionary<string, List<string>>();
+
+
+            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\lodmeshes3.txt")) {
+                string[] split = line.Split('\t');
+                if (split.Length < 8) {
+                    continue;
+                }
+
+                if (split[10] != "mw") {
+                    continue; //temp
+                }
+
+                if(split[11] != set) continue;
+
+				meshes.Add(split[1]);
+            }
+
+			//foreach (string mesh in meshes) Console.WriteLine(mesh);
+
+			foreach (string line in File.ReadAllLines(@"E:\Anna\Anna\Visual Studio\PythonScripts\texnames.txt")) {
+                string[] split = line.Split('|');
+				if (meshes.Contains(split[0])) {
+                    for (int i = 1; i < split.Length; i++) {
+						string tex = split[i];
+						if (tex.Length == 0) continue;
+						int slash = tex.LastIndexOf('\\'); if(slash != -1) tex = tex.Substring(slash + 1);
+						tex = tex.ToLower();
+						tex = tex.Substring(0, tex.Length - 4);
+						if (!texCounts.ContainsKey(tex)) {
+							texCounts[tex] = 0;
+							texMeshes[tex] = new List<string>();
+						} 
+						texCounts[tex]++;
+						texMeshes[tex].Add(split[0]);
+                    }
+                }
+            }
+
+			foreach(string tex in texCounts.Keys) {
+				Console.Write($"{tex};{texCounts[tex]}");
+				for (int i = 0; i < texMeshes[tex].Count; i++) Console.Write(";" + texMeshes[tex][i]);
+				Console.WriteLine();
+			}
+
+        }
+
+
 
         public static void LodMeshes3() {
 
