@@ -40,8 +40,19 @@ namespace SmallScripts {
         }
 
 		static void Main(string[] args) {
+			TES3.MWDoors(@"E:\Extracted\Morrowind\tes3conv\NEWmergeTR.json"); return;
 
-			TES3.MeshTextures("dae"); return;
+            //TES3.DoorsListNew(@"E:\Extracted\Morrowind\tes3conv\MWMerge.json");
+            //TES3.DoorsListNew(@"E:\Extracted\Morrowind\tes3conv\NEWmergeTR.json"); return;
+
+            TES3.LodMeshes3(); return;
+
+
+
+            TES3.TES3StaticList2(@"E:\Extracted\Morrowind\tes3conv\MWMerge.json", @"E:\Extracted\Morrowind\tes3conv\TR-22-02-24.json"); return;
+
+
+            TES3.MeshTextures("dwe"); return;
             //TES3.DoorsMerged(@"E:\Extracted\Morrowind\trmainland.json"); return;
 
             //TES3.TES3QuestInfo(@"E:\Extracted\Morrowind\bloodmoon.json"); return;
@@ -50,7 +61,6 @@ namespace SmallScripts {
 
             //PoE.LeagueWeeks(); return;
 
-            TES3.LodMeshes3(); return;
 
 			List<string> esps = new List<string>() { @"E:\Extracted\Morrowind\morrowind.json", @"E:\Extracted\Morrowind\bloodmoon.json" };
 			foreach (string path in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\tes3conv", "*.json")) esps.Add(path);
