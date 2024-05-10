@@ -1311,21 +1311,28 @@ namespace SmallScripts {
 			Dictionary<string, List<Float2>> mergePositions = new Dictionary<string, List<Float2>>();
 			Dictionary<string, string> mergeTypes = new Dictionary<string, string>();
 
+			Dictionary<string, string> mergeNames = new Dictionary<string, string>();
+
             Dictionary<string, string> cellTypes = new Dictionary<string, string>();
-            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypes.txt")) {
+            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypes2.txt")) {
                 var split = line.Split('\t');
                 cellTypes[split[0]] = split[1];
+				if (split[2] != "") mergeNames[split[0]] = split[2];
             }
 
 
             JArray esp = JArray.Parse(File.ReadAllText(espPath));
             for (int i = 0; i < esp.Count; i++) {
-                if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell") {
-                    string cellName = esp[i]["id"].Value<string>();
+				var cell = esp[i];
+                if (cell["type"] != null && cell["type"].Value<string>() == "Cell") {
+                    string cellName = cell["id"].Value<string>();
+
+                    bool isInterior = (cell["data"]["flags"].Value<int>() & 1) > 0;
+                    if (!isInterior) continue;
 
 
                     //Console.WriteLine(cellName);
-                    JArray refs = (JArray)esp[i]["references"];
+                    JArray refs = (JArray)cell["references"];
                     for (int refNum = 0; refNum < refs.Count; refNum++) {
                         if (refs[refNum]["door_destination_coords"] != null) {
                             if (refs[refNum]["door_destination_cell"] != null) {
@@ -1339,20 +1346,15 @@ namespace SmallScripts {
 
                                 string type = cellTypes.ContainsKey(cellName) ? cellTypes[cellName] : "unknown";
 
-								
-                                int _t = cellName.IndexOf(',');
-								if (_t == -1) _t = cellName.IndexOf(':');
-                                if (_t != -1) {
-                                    string mergeName = cellName.Substring(0, _t);
+								if(mergeNames.ContainsKey(cellName)) {
+									string mergeName = mergeNames[cellName];
                                     if (!mergePositions.ContainsKey(mergeName)) {
                                         mergePositions[mergeName] = new List<Float2>();
                                         mergeTypes[mergeName] = type;
                                     }
                                     mergePositions[mergeName].Add(new Float2 { x = xMap, y = yMap });
-
                                 } else {
                                     Console.WriteLine($"<div class=\"icon {type.Substring(0, 3)} {type}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{cellName}\"></div>");
-
                                 }
                                 //Console.WriteLine($"{cellName} -> ({xMap},{yMap})");
                             }
