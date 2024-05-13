@@ -40,7 +40,9 @@ namespace SmallScripts {
         }
 
 		static void Main(string[] args) {
-			TES3.DoorsMerged(@"E:\Extracted\Morrowind\tes3conv\NEWmergeTR.json"); return;
+			//TES3.MWListUnknownUnusedDoorCells(@"E:\Extracted\Morrowind\tes3conv\newnewtr.json"); return;
+            //PoE.LeagueWeeks(); return;
+            TES3.DoorsMerged(@"E:\Extracted\Morrowind\tes3conv\newnewtr.json"); return;
 
             //TES3.DoorsListNew(@"E:\Extracted\Morrowind\tes3conv\MWMerge.json");
             //TES3.DoorsListNew(@"E:\Extracted\Morrowind\tes3conv\NEWmergeTR.json"); return;
@@ -59,7 +61,6 @@ namespace SmallScripts {
 
             //TES3.TES3QuestInfo(@"E:\Extracted\Morrowind\tes3conv\TR_Mainland.json"); return;
 
-            //PoE.LeagueWeeks(); return;
 
 
 			List<string> esps = new List<string>() { @"E:\Extracted\Morrowind\morrowind.json", @"E:\Extracted\Morrowind\bloodmoon.json" };

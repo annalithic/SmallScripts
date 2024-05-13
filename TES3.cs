@@ -1309,15 +1309,21 @@ namespace SmallScripts {
 
 
 			Dictionary<string, List<Float2>> mergePositions = new Dictionary<string, List<Float2>>();
-			Dictionary<string, string> mergeTypes = new Dictionary<string, string>();
-
-			Dictionary<string, string> mergeNames = new Dictionary<string, string>();
 
             Dictionary<string, string> cellTypes = new Dictionary<string, string>();
+            Dictionary<string, string> cellRegions = new Dictionary<string, string>();
+
+            Dictionary<string, string> mergeTypes = new Dictionary<string, string>();
+            Dictionary<string, string> mergeRegions = new Dictionary<string, string>();
+
+            Dictionary<string, string> mergeNames = new Dictionary<string, string>();
+
             foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypes2.txt")) {
                 var split = line.Split('\t');
-                cellTypes[split[0]] = split[1];
-				if (split[2] != "") mergeNames[split[0]] = split[2];
+				string name = split[0];
+                cellTypes[name] = split[1];
+				if (split[2] != "") mergeNames[name] = split[2];
+				cellRegions[name] = split[3];
             }
 
 
@@ -1345,16 +1351,18 @@ namespace SmallScripts {
                                 float yMap = (yAdd - y) * cellSize / 8192;
 
                                 string type = cellTypes.ContainsKey(cellName) ? cellTypes[cellName] : "unknown";
+								string region = cellRegions.ContainsKey(cellName) ? cellRegions[cellName] : "unknown";
 
-								if(mergeNames.ContainsKey(cellName)) {
+                                if (mergeNames.ContainsKey(cellName)) {
 									string mergeName = mergeNames[cellName];
                                     if (!mergePositions.ContainsKey(mergeName)) {
                                         mergePositions[mergeName] = new List<Float2>();
                                         mergeTypes[mergeName] = type;
+										mergeRegions[mergeName] = region;
                                     }
                                     mergePositions[mergeName].Add(new Float2 { x = xMap, y = yMap });
                                 } else {
-                                    Console.WriteLine($"<div class=\"icon {type.Substring(0, 3)} {type}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{cellName}\"></div>");
+                                    Console.WriteLine($"<div class=\"icon {type.Substring(0, 3)} {type} {region}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{cellName}\"></div>");
                                 }
                                 //Console.WriteLine($"{cellName} -> ({xMap},{yMap})");
                             }
@@ -1373,8 +1381,9 @@ namespace SmallScripts {
 				}
 				x /= positions.Count; y /= positions.Count;
 				string type = mergeTypes[mergeName];
+				string region = mergeRegions[mergeName];
 				string markerType = type.Contains("_town") || type.Contains("_city") || type.Contains("_fort") ? "mark" : "icon";
-                Console.WriteLine($"<div class=\"{markerType} {mergeTypes[mergeName].Substring(0, 3)} {mergeTypes[mergeName]}\" style=\"left:{(int)(x + 0.5)};top:{(int)(y + 0.5)};\" title=\"{mergeName}\"></div>");
+                Console.WriteLine($"<div class=\"{markerType} {mergeTypes[mergeName].Substring(0, 3)} {mergeTypes[mergeName]} {region}\" style=\"left:{(int)(x + 0.5)};top:{(int)(y + 0.5)};\" title=\"{mergeName}\"></div>");
 
             }
             //Console.WriteLine("\r\n\r\n\r\n");
@@ -1388,7 +1397,8 @@ namespace SmallScripts {
             int yAdd = 38 * 8192;
 
             Dictionary<string, string> cellTypes = new Dictionary<string, string>();
-            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypes.txt")) {
+
+            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypes2.txt")) {
                 var split = line.Split('\t');
                 cellTypes[split[0]] = split[1];
             }
