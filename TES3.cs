@@ -57,13 +57,13 @@ namespace MW {
 			choices = new List<Info>();
 
 			//if (rec["result"] == null) continue;
-			if (info["result"] != null) {
-                string result = info.Str("result");
+			if (info["script_text"] != null) {
+                string result = info.Str("script_text");
                 foreach (string line in result.Split('\n')) {
 					int commentIndex = line.IndexOf(';');
                     string lineNoComment = commentIndex == -1 ? line : line.Substring(0, commentIndex);
 
-                    string[] split = lineNoComment.SplitQuotes();
+                    string[] split = lineNoComment.SplitQuotes(',', '.');
                     for (int word = 0; word < split.Length; word++) {
                         if (split[word] == "Journal") {
                             string quest = split[word + 1].Trim('"');
@@ -93,15 +93,15 @@ namespace MW {
             miscFilters = "";
             foreach (var filter in info["filters"]) {
                 string filter_type = filter.Str("filter_type");
-                string filter_function = filter.Str("filter_function");
+                string filter_function = filter.Str("function");
                 string filter_id = filter.Str("id");
-                string filter_comparison = filterComparison[filter.Str("filter_comparison")];
-                string filter_value = filter["value"]["Integer"] != null ? filter["value"]["Integer"].Int().ToString() : filter["value"]["Float"].Float().ToString();
+                string filter_comparison = filterComparison[filter.Str("comparison")];
+                string filter_value = filter["value"]["type"].Str() == "Integer" ? filter["value"]["data"].Int().ToString() : filter["value"]["data"].Float().ToString();
 
                 if (filter_type == "Journal") {
-					questReqs.Add(new QuestReq { id = filter_id, comparison = filter_comparison, stage = filter["value"]["Integer"].Int() });
+					questReqs.Add(new QuestReq { id = filter_id, comparison = filter_comparison, stage = filter["value"]["data"].Int() });
                 } else if (filter_function == "Choice") {
-					choice = filter["value"]["Integer"].Int();
+					choice = filter["value"]["data"].Int();
                 }
                 miscFilters = miscFilters + $"{filter_type} {filter_function} {filter_id} {filter_comparison} {filter_value}|";
             }
@@ -542,9 +542,9 @@ namespace SmallScripts {
 				if (rec["type"] == null) continue;
 				string type = rec["type"].Value<string>();
 
-                if (type == "Info") {
+                if (type == "DialogueInfo") {
 					inTopic = true;
-                    if (rec["quest_name"] != null && rec["quest_name"].Int() == 1) {
+                    if (rec["quest_state"] != null && rec["quest_state"]["type"].Str() == "Name") {
                         questNames[topic] = rec.Str("text");
                     }
 
@@ -586,15 +586,15 @@ namespace SmallScripts {
 
 
 
-                        string cellName = rec["id"].Value<string>();
+                        string cellName = rec["name"].Value<string>();
 
                         if (cellName == "" && rec["region"] != null) cellName = rec["region"].Value<string>();
-                        if ((rec["data"]["flags"].Value<int>() & 1) == 0) {
+
+                        if (rec["data"]["flags"].Value<string>().IndexOf("IS_INTERIOR") != -1) {
                             int cellX = esp[i]["data"]["grid"][0].Value<int>();
                             int cellY = esp[i]["data"]["grid"][1].Value<int>();
                             cellName = cellName + $" ({cellX},{cellY})";
                         }
-
 
                         foreach (var refr in (JArray)rec["references"]) {
                             string id = refr["id"].Value<string>();
@@ -618,6 +618,7 @@ namespace SmallScripts {
 
 
             foreach (string quest in questInfos.Keys) {
+
                 string questName = questNames.ContainsKey(quest) ? questNames[quest] : "";
 				foreach(MW.Info info in questInfos[quest]) {
 					foreach(MW.QuestStage questStage in info.quests) {
@@ -643,21 +644,22 @@ namespace SmallScripts {
 
 			JArray esp = JArray.Parse(File.ReadAllText(espPath));
 			for (int i = 0; i < esp.Count; i++) {
-				if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell") {
-					if ((esp[i]["data"]["flags"].Value<int>() & 1) == 1) continue; //interior
-					JArray refs = (JArray)esp[i]["references"];
-					for (int refNum = 0; refNum < refs.Count; refNum++) {
-						if (refs[refNum]["door_destination_cell"] == null) continue;
-						JArray coords = (JArray)refs[refNum]["translation"];
-						float x = coords[0].Value<float>(); if (x < minX || x > maxX) continue;
-						float y = coords[1].Value<float>(); if (y < minY || y > maxY) continue;
-						string cellName = refs[refNum]["door_destination_cell"].Value<string>();
-						int xPos = (int)((x - minX) * 1000 / unitSizeX);
-						int yPos = 1000 - (int)((y - minY) * 1000 / unitSizeY);
+				var form = esp[i];
+				if (form["type"].Value<string>() != "Cell") continue;
+				if (form["data"]["flags"].Value<string>().IndexOf("IS_INTERIOR") != -1) continue; //interior
+                JArray refs = (JArray)form["references"];
+				for (int refNum = 0; refNum < refs.Count; refNum++) {
+					if (refs[refNum]["destination"] == null) continue;
+					JArray coords = (JArray)refs[refNum]["translation"];
+					float x = coords[0].Value<float>(); if (x < minX || x > maxX) continue;
+					float y = coords[1].Value<float>(); if (y < minY || y > maxY) continue;
+					string cellName = refs[refNum]["destination"]["cell"].Value<string>();
+					int xPos = (int)((x - minX) * 1000 / unitSizeX);
+					int yPos = 1000 - (int)((y - minY) * 1000 / unitSizeY);
 
-						Console.WriteLine($"{{{{Image Mark|{xPos}|{yPos}|{cellName}|{cellName}|position=on}}}}");
-					}
+					Console.WriteLine($"{{{{Image Mark|{xPos}|{yPos}|{cellName}|{cellName}|position=on}}}}");
 				}
+				
 			}
 			Console.WriteLine("\r\n\r\n\r\n");
 		}
@@ -1301,7 +1303,7 @@ namespace SmallScripts {
         }
 
 
-        public static void DoorsMerged(string espPath) {
+        public static void DoorsMerged(string espPath, bool merge = true) {
             int cellSize = 64;
             int xAdd = 42 * 8192;
             int yAdd = 38 * 8192;
@@ -1318,7 +1320,7 @@ namespace SmallScripts {
 
             Dictionary<string, string> mergeNames = new Dictionary<string, string>();
 
-            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypes2.txt")) {
+            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypesgf.txt")) {
                 var split = line.Split('\t');
 				string name = split[0];
                 cellTypes[name] = split[1];
@@ -1330,44 +1332,43 @@ namespace SmallScripts {
             JArray esp = JArray.Parse(File.ReadAllText(espPath));
             for (int i = 0; i < esp.Count; i++) {
 				var cell = esp[i];
-                if (cell["type"] != null && cell["type"].Value<string>() == "Cell") {
-                    string cellName = cell["id"].Value<string>();
+				if (cell["type"].Value<string>() != "Cell") continue;
+                if (cell["data"]["flags"].Value<string>().IndexOf("IS_INTERIOR") == -1) continue;
 
-                    bool isInterior = (cell["data"]["flags"].Value<int>() & 1) > 0;
-                    if (!isInterior) continue;
+                string cellName = cell["name"].Value<string>();
 
+                //Console.WriteLine(cellName);
+                JArray refs = (JArray)cell["references"];
+                for (int refNum = 0; refNum < refs.Count; refNum++) {
+					var obj = refs[refNum];
+                    if (obj["destination"] != null) {
+                        if (obj["destination"]["cell"].Value<string>() == "") {
+                            //Console.WriteLine(cellName + " -> " + refs[refNum]["door_destination_cell"].Value<string>());
+                            JArray coords = (JArray)refs[refNum]["destination"]["translation"];
+                            float x = coords[0].Value<float>();
+                            float y = coords[1].Value<float>();
+                            float xMap = (x + xAdd) * cellSize / 8192;
+                            float yMap = (yAdd - y) * cellSize / 8192;
 
-                    //Console.WriteLine(cellName);
-                    JArray refs = (JArray)cell["references"];
-                    for (int refNum = 0; refNum < refs.Count; refNum++) {
-                        if (refs[refNum]["door_destination_coords"] != null) {
-                            if (refs[refNum]["door_destination_cell"] != null) {
-                                //Console.WriteLine(cellName + " -> " + refs[refNum]["door_destination_cell"].Value<string>());
-                            } else {
-                                JArray coords = (JArray)refs[refNum]["door_destination_coords"];
-                                float x = coords[0].Value<float>();
-                                float y = coords[1].Value<float>();
-                                float xMap = (x + xAdd) * cellSize / 8192;
-                                float yMap = (yAdd - y) * cellSize / 8192;
+                            string type = cellTypes.ContainsKey(cellName) ? cellTypes[cellName] : "unknown";
+                            string region = cellRegions.ContainsKey(cellName) ? cellRegions[cellName] : "unknown";
 
-                                string type = cellTypes.ContainsKey(cellName) ? cellTypes[cellName] : "unknown";
-								string region = cellRegions.ContainsKey(cellName) ? cellRegions[cellName] : "unknown";
-
-                                if (mergeNames.ContainsKey(cellName)) {
-									string mergeName = mergeNames[cellName];
-                                    if (!mergePositions.ContainsKey(mergeName)) {
-                                        mergePositions[mergeName] = new List<Float2>();
-                                        mergeTypes[mergeName] = type;
-										mergeRegions[mergeName] = region;
-                                    }
-                                    mergePositions[mergeName].Add(new Float2 { x = xMap, y = yMap });
-                                } else {
-                                    Console.WriteLine($"<div class=\"icon {type.Substring(0, 3)} {type} {region}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{cellName}\"></div>");
+                            if (mergeNames.ContainsKey(cellName) && merge) {
+                                string mergeName = mergeNames[cellName];
+                                if (!mergePositions.ContainsKey(mergeName)) {
+                                    mergePositions[mergeName] = new List<Float2>();
+                                    mergeTypes[mergeName] = type;
+                                    mergeRegions[mergeName] = region;
                                 }
-                                //Console.WriteLine($"{cellName} -> ({xMap},{yMap})");
+                                mergePositions[mergeName].Add(new Float2 { x = xMap, y = yMap });
+                            } else {
+                                Console.Write($"<div class=\"icon {type.Substring(0, 3)} {type} {region}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{cellName}\"></div>"); Console.WriteLine();
                             }
+                        } else {
+                            //Console.WriteLine($"{cellName} -> ({xMap},{yMap})");
                         }
                     }
+                    
                 }
             }
 
@@ -1398,29 +1399,29 @@ namespace SmallScripts {
 
             Dictionary<string, string> cellTypes = new Dictionary<string, string>();
 
-            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypes2.txt")) {
+            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypesGF.txt")) {
                 var split = line.Split('\t');
                 cellTypes[split[0]] = split[1];
             }
 
             HashSet<string> cells = new HashSet<string>(cellTypes.Keys);
 
-
+            
             JArray esp = JArray.Parse(File.ReadAllText(espPath));
             for (int i = 0; i < esp.Count; i++) {
-                if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell") {
-                    string cellName = esp[i]["id"].Value<string>();
-                    //Console.WriteLine(cellName);
-                    JArray refs = (JArray)esp[i]["references"];
-                    for (int refNum = 0; refNum < refs.Count; refNum++) {
-                        if (refs[refNum]["door_destination_coords"] != null) {
-                            if (refs[refNum]["door_destination_cell"] != null) {
-                                //Console.WriteLine(cellName + " -> " + refs[refNum]["door_destination_cell"].Value<string>());
-                            } else {
-								if (!cellTypes.ContainsKey(cellName)) Console.WriteLine(cellName);
-								cells.Remove(cellName);
-                            }
-                        }
+				var form = esp[i];
+                if (form["type"].Value<string>() != "Cell") continue;
+					
+                string cellName = form["name"].Value<string>();
+                //Console.WriteLine(cellName);
+                JArray refs = (JArray)form["references"];
+                for (int refNum = 0; refNum < refs.Count; refNum++) {
+                    if (refs[refNum]["destination"] == null) continue;
+                    if (refs[refNum]["destination"]["cell"].Value<string>() == "") {
+                        if (!cellTypes.ContainsKey(cellName)) Console.WriteLine(cellName);
+                        cells.Remove(cellName);
+                        //Console.WriteLine(cellName + " -> " + refs[refNum]["door_destination_cell"].Value<string>());
+                    } else {
                     }
                 }
             }
@@ -1503,7 +1504,7 @@ namespace SmallScripts {
 								string zero = null;
 								string name2 = null;
 								i++;
-								while (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Info") {
+								while (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "DialogueInfo") {
 									if (esp[i]["data"]["disposition"].Value<int>() == 0) {
 										zero = esp[i]["text"].Value<string>();
 										if (esp[i]["quest_name"] != null) name = esp[i]["text"].Value<string>();
