@@ -1302,6 +1302,63 @@ namespace SmallScripts {
 
         }
 
+		public static void MapNpcs(string espPath) {
+            int cellSize = 64;
+            int xAdd = 42 * 8192;
+            int yAdd = 38 * 8192;
+
+			Dictionary<string, string> scriptText = new Dictionary<string, string>();
+
+			Dictionary<string, string> npcs = new Dictionary<string, string>();
+            HashSet<string> npcDisabled = new HashSet<string>();
+            HashSet<string> npcHostile = new HashSet<string>();
+
+            JArray esp = JArray.Parse(File.ReadAllText(espPath));
+            for (int i = 0; i < esp.Count; i++) {
+                var form = esp[i];
+				string formType = form["type"].Str();
+				if(formType == "Script") {
+					scriptText[form.Str("id")] = form.Str("text");
+				} else if(formType == "Npc") {
+					string formId = form["id"].Str();
+					string npcName = form["name"].Str();
+					if (npcName == "Mendyn Hereloth") Console.WriteLine(npcName);
+					npcs[formId] = npcName;
+					if(form["ai_data"]["fight"].Value<int>() > 70) npcHostile.Add(formId);
+					if (form["script"] != null) {
+						string scriptName = form.Str("script");
+						if (!scriptText.ContainsKey(scriptName)) continue;
+                        string script = scriptText[scriptName];
+						script = script.Replace("\r\n", " ");
+                        script = script.Replace("\t", " ");
+						foreach(string token in script.Split(new char[] {' ', ','}, StringSplitOptions.RemoveEmptyEntries)) {
+							if (token == "disable" || token == "Disable") {
+								npcDisabled.Add(formId);
+								break;
+							}
+						}
+					}
+				} else if (formType == "Cell") {
+                    if (form["data"]["flags"].Value<string>().IndexOf("IS_INTERIOR") != -1) continue;
+
+                    //Console.WriteLine(cellName);
+                    JArray refs = (JArray)form["references"];
+                    for (int refNum = 0; refNum < refs.Count; refNum++) {
+                        var reference = refs[refNum];
+						string refId = reference.Str("id");
+						if (!npcs.ContainsKey(refId)) continue;
+                            
+                        float x = reference["translation"][0].Value<float>();
+                        float y = reference["translation"][1].Value<float>();
+                        float xMap = (x + xAdd) * cellSize / 8192;
+                        float yMap = (yAdd - y) * cellSize / 8192;
+						string extraClass = npcDisabled.Contains(refId) ? " disable" : npcHostile.Contains(refId) ? " hostile" : "";
+                        Console.Write($"<div class=\"npc{extraClass}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{npcs[refId]}\"></div>"); Console.WriteLine();
+                        
+                    }
+                }
+            }
+        }
 
         public static void DoorsMerged(string espPath, bool merge = true) {
             int cellSize = 64;

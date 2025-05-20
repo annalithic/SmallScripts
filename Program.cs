@@ -7,6 +7,9 @@ using ImageMagick.Formats;
 using System.Threading;
 using System.Diagnostics;
 using Newtonsoft.Json.Linq;
+using System.Threading.Tasks;
+using System.Net.Http;
+using System.Net;
 
 namespace SmallScripts {
 	class Program {
@@ -39,12 +42,96 @@ namespace SmallScripts {
             image.Write($"gridnumbers_{imageCount}.webp", write);
         }
 
-		static void Main(string[] args) {
-			//TES3.MWListUnknownUnusedDoorCells(@"E:\Extracted\Morrowind\tes3conv\newnewtr.json"); return;
-            //PoE.LeagueWeeks(); return;
-            TES3.DoorsMerged(@"E:\Extracted\Morrowind\tes3conv\newnewtr.json"); return;
+        static void MapGenieMontage2(string folder) {
+			int start = 65024 + 128;
+			for (int blockY = 0; blockY < 8; blockY++) {
+				for (int blockX = 0; blockX < 8; blockX++) {
+					MagickImageCollection images = new MagickImageCollection();
+					for (int y = 0; y < 32; y++) {
+						for (int x = 0; x < 32; x++) {
+							string imagePath = folder + $"/{start + y + blockY * 32}_{start + x + blockX * 32}.jpg";
+							Console.WriteLine(imagePath);
+							images.Add(new MagickImage(imagePath));
+						}
+					}
+					var montage = images.Montage(new MontageSettings() { Geometry = new MagickGeometry(256) });
+					montage.Write($@"E:\Extracted\ACRED\block_{blockY}_{blockX}.webp", new WebPWriteDefines { Lossless = true });
+				}
+			}
+        }
 
-            //TES3.DoorsListNew(@"E:\Extracted\Morrowind\tes3conv\MWMerge.json");
+        static void MapGenieMontage(string folder) {
+            MagickImageCollection images = new MagickImageCollection();
+            foreach (string path in Directory.EnumerateFiles(folder, "*.jpg")) {
+                images.Add(new MagickImage(path));
+            }
+            var montage = images.Montage(new MontageSettings() { Geometry = new MagickGeometry(256) });
+            montage.Write(folder + "/montage.png");
+        }
+
+        static void MapGenieRequest() {
+            WebClient client = new WebClient();
+			//for (int y = 2032; y < 2048; y++) {
+			//    for (int x = 2032; x < 2048; x++) {
+			//        GetMapTile(client, $"https://tiles.mapgenie.io/games/assassins-creed-shadows/japan/satellite-v1/12/{y}/{x}.jpg", x, y);
+			//    }
+			//}
+
+			for (int y = 65024 + 128; y < 65536 - 128; y++) {
+				for (int x = 65024 + 128; x < 65536 - 128; x++) {
+					GetMapTile(client, $"https://tiles.mapgenie.io/games/assassins-creed-shadows/japan/satellite-v1/17/{y}/{x}.jpg", x, y);
+				}
+			}
+
+		}
+
+		static void GetMapTile(WebClient client, string address, int x, int y) {
+            string filename = string.Format("E:/Extracted/ACRED/tiles/{0:D3}_{1:D3}.jpg", y, x);
+			if (File.Exists(filename)) return;
+            Console.WriteLine(address);
+            try {
+                client.DownloadFile(new Uri(address), filename);
+            } catch { }
+        }
+
+
+        static void Main(string[] args) {
+			TES3.MapNpcs(@"E:\Extracted\Morrowind\TR_Mainland.json"); return;
+
+            TES3.MWDoors(@"E:\Extracted\Morrowind\TR_Mainland.json", 0.5625f, -44.3125f, 1.5f); return; //hlerynhul
+
+            //MapGenieMontage2(@"E:\Extracted\ACRED\tiles"); return;
+            //MapGenieRequest(); return;
+            TES3.TES3QuestInfo(@"E:\Extracted\Morrowind\TR_Mainland.json"); return;
+            TES3.DoorsMerged(@"E:\Extracted\Morrowind\TR_Mainland.json", true); return;
+            TES3.MWListUnknownUnusedDoorCells(@"E:\Extracted\Morrowind\TR_Mainland.json"); return;
+            TES3.MWDoors(@"E:\Extracted\Morrowind\TR_Mainland.json", 4.75f, -52, 3.5f); return; //naris
+            //TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json"); return;
+            //TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 5.125f, -34.125f, 0.75f); return; //idathren
+            //TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 0.875f, -32.5f, 1.75f); return; //hlan oek
+            //TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 4.5f, -28.5f, 3f, 2f); return; //almas thirr
+            //TES3.MWDoors(@"F:\Extracted\BGS\tr_mainland.json", 16.75f, 14.5f, 2); return; //Firewatch
+            //TES3.MWDoors(@"F:\Extracted\BGS\tr_mainland.json", 24.75f, 0.75f, 1); return; //Helnim
+
+
+            PoE.PoeUIImages(@"E:\Extracted\PathOfExile2\Day5\art"); return;
+
+			Souls.EldenRingMapCompose4("00"); return;
+
+			Souls.EldenRingListMapMask(@"F:\Extracted\Elden Ring\DEEELCEE\menu\71_maptile-mtmskbnd-dcx\MENU_MapTile_M00.mtmsk"); return;
+
+			foreach(string tile in Directory.EnumerateFiles(@"F:\Extracted\Elden Ring\DEEELCEE\menu\71_maptile-tpfbhd", "*.dds", SearchOption.AllDirectories)) {
+				Console.WriteLine(tile);
+				File.Move(tile, @"F:\Extracted\Elden Ring\DEEELCEE\menu\dds\" + Path.GetFileName(tile));
+			}
+			return;
+			//TES3.MWListUnknownUnusedDoorCells(@"E:\Extracted\Morrowind\tes3conv_new\TR_24_06_17.json"); return;
+			//PoE.LeagueWeeks(); return;
+
+			//TES3.MWListUnknownUnusedDoorCells(@"E:\Extracted\Morrowind\tes3conv_new\TR_24_05_21.json"); return;
+            TES3.DoorsMerged(@"E:\Extracted\Morrowind\tes3conv_new\TR_24_06_17.json", true); return;
+
+            //TES3.DoorsListNew(@"E:\Extracted\Morrowind\tes3conv_new\TR_24_05_21.json");
             //TES3.DoorsListNew(@"E:\Extracted\Morrowind\tes3conv\NEWmergeTR.json"); return;
 
             TES3.LodMeshes3(); return;
@@ -87,11 +174,6 @@ namespace SmallScripts {
             TES3.OpenMWMapCombine(@"F:\Extracted\Morrowind\MAPSTRNEWSMALL\maps", 128); return;
 
             foreach (string path in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\tes3conv", "*.json")) TES3.MWDoors(path); return;
-			//TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json"); return;
-
-            TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 5.125f, -34.125f, 0.75f); return; //idathren
-
-            //TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 0.875f, -32.5f, 1.75f); return; //hlan oek
 
 
             NumberGrid(); return;
@@ -108,7 +190,6 @@ namespace SmallScripts {
 				Console.WriteLine();
 			} return;
 
-            TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 4.5f, -28.5f, 3f, 2f); return; //almas thirr
 
             //fun with combinatronics
             bool[] found = new bool[500];
@@ -328,8 +409,7 @@ namespace SmallScripts {
 			for (int j = 1; j <= 60; j++) Console.WriteLine($"*{j}. "); return;
 
 
-			//TES3.MWDoors(@"F:\Extracted\BGS\tr_mainland.json", 16.75f, 14.5f, 2); return; //Firewatch
-			TES3.MWDoors(@"F:\Extracted\BGS\tr_mainland.json", 24.75f, 0.75f, 1); return; //Helnim
+
 
 
 			//TES3.TES3IntCellResizeTest();
@@ -478,6 +558,7 @@ namespace SmallScripts {
 			//Warframe.TOC toc = new Warframe.TOC(@"C:\Games\Steam\steamapps\common\Warframe\Cache.Windows\B.Misc.toc");
 			//toc.Print();
 		}
+
 
 		static void AverageImages(string folder, string extension = "*.png") {
 			long[] pixels = null;

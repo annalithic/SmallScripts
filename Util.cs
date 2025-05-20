@@ -11,7 +11,9 @@ namespace SmallScripts {
 
         public static string Str(this JToken obj) { return obj.Value<string>(); }
 
-        public static string[] SplitQuotes(this string s) {
+        public static string[] SplitQuotes(this string s, params char[] extraSplitChars) {
+            HashSet<char> splitChars = new HashSet<char>() { ' ', '\t' };
+            if (extraSplitChars != null) foreach (var c in extraSplitChars) splitChars.Add(c);
             if (s.Length == 0) return new string[0];
 
             bool inQuotes = false;
@@ -19,14 +21,20 @@ namespace SmallScripts {
             List<string> words = new List<string>();
             StringBuilder builder = new StringBuilder();
             for (int i = 0; i < s.Length; i++) {
-                if (char.IsWhiteSpace(s[i]) && !inQuotes) {
+                if (splitChars.Contains(s[i]) && !inQuotes) {
                     if (inWord) {
                         inWord = false;
                         words.Add(builder.ToString());
                         builder.Clear();
                     } else continue;
-                } else if (s[i] == '"') inQuotes = !inQuotes;
-                else {
+                } else if (s[i] == '"') {
+                    if (!inQuotes && inWord) {
+                        inWord = false;
+                        words.Add(builder.ToString());
+                        builder.Clear();
+                    }
+                    inQuotes = !inQuotes;
+                } else {
                     inWord = true;
                     builder.Append(s[i]);
                 }
