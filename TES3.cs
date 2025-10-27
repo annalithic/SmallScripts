@@ -127,6 +127,16 @@ namespace SmallScripts {
 
         };
 
+		public static void CreateBlankDistMeshes(string folder, string outfolder, string emptyMeshPath = @"E:\Extracted\Morrowind\empty.nif") {
+			foreach (string path in Directory.EnumerateFiles(folder, "*.nif", SearchOption.AllDirectories)) {
+				string pathRelative = Path.Combine(outfolder, path.Substring(folder.Length + 1));
+				pathRelative = pathRelative.Substring(0, pathRelative.Length - 4) + "_dist.nif";
+				if(!Directory.Exists(Path.GetDirectoryName(pathRelative))) Directory.CreateDirectory(Path.GetDirectoryName(pathRelative));
+				//if(!File.Exists(pathRelative))
+				File.Copy(emptyMeshPath, pathRelative, true);
+			}
+		}
+
         public static void MeshTextures(string set) {
 
 			HashSet<string> meshes = new HashSet<string>();
@@ -247,8 +257,8 @@ namespace SmallScripts {
                 if (!Directory.Exists(Path.GetDirectoryName(dest))) Directory.CreateDirectory(Path.GetDirectoryName(dest));
                 //File.Copy(file, dest);
                 Process process = new Process();
-                process.StartInfo.FileName = @"E:\Programs\Python3.9\python.exe";
-                process.StartInfo.Arguments = $@" ""E:\A\A\Visual Studio\PythonScripts\texreplace.py"" ""{file}"" ""{dest}"" ""{lodLevelTextures[lodLevel % 3]}""";
+                process.StartInfo.FileName = @"E:\Programs\Python 3.12\python.exe";
+                process.StartInfo.Arguments = $@" ""E:\Projects\PythonScripts\texreplace.py"" ""{file}"" ""{dest}"" ""{lodLevelTextures[lodLevel % 3]}""";
                 process.StartInfo.CreateNoWindow = true;
 				process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 process.Start();
@@ -313,9 +323,147 @@ namespace SmallScripts {
 
             }
 		}
+		
+		class ModelStats {
+			public string model;
+			public string sharedModel;
+			public string type;
+			public string dist;
+			public string category;
+			public string comment;
+            public bool tr;
+
+			public int tris;
+			public int trisDist;
+
+			public int count;
+			public int countTR;
+
+            public Dictionary<string, int> formCounts;
+            public Dictionary<string, int> formCountsTR;
+        }
+
+        public static void TES3StaticList3(params string[] espPaths) {
+			
 
 
-        public static void TES3StaticList2(params string[] espPaths) {
+            HashSet<string> staticFormTypes = new HashSet<string> { "Static", "Activator", "Container", "Door", };
+
+			var models = new Dictionary<string, ModelStats>();
+
+            foreach (string line in File.ReadAllLines(@"E:\Extracted\Morrowind\mwmesh.txt")) {
+				var words = line.Split('\t');
+				ModelStats stats = new ModelStats();
+				stats.model = words[2].Replace('\\','/');
+				stats.sharedModel = words[0];
+				stats.type = words[4];
+				stats.dist = words[5];
+				stats.category = words[6];
+				stats.comment = words[18];
+				models[stats.model] = stats;
+            }
+
+            foreach (string line in File.ReadAllLines(@"E:\Projects\PythonScripts\meshstats3.txt")) {
+                string[] words = line.Split('|');
+                string modelPath = words[0].ToLower();
+				string model = modelPath.Substring(modelPath.IndexOf("\\meshes\\") + "\\meshes\\".Length).Replace('\\', '/');
+				model = model.Replace("_dist.nif", ".nif");
+				bool dist = modelPath.Contains("morrowindmods\\lod");
+
+				if(!models.ContainsKey(model)) models[model] = new ModelStats() { model = model };
+                var stats = models[model];
+				if (dist)
+					stats.trisDist = int.Parse(words[1]);
+				else {
+                    stats.tris = int.Parse(words[1]);
+					stats.trisDist = stats.tris;
+					stats.tr = !modelPath.Contains("morrowind\\vanilla");
+                }
+            }
+
+
+			Dictionary<string, string> idModels = new Dictionary<string, string>();
+			Console.WriteLine("STATS....");
+			foreach (string espPath in espPaths) {
+				Console.WriteLine(espPath);
+				JArray esp = JArray.Parse(File.ReadAllText(espPath));
+				for (int i = 0; i < esp.Count; i++) {
+					var entry = esp[i];
+					if (entry["type"] != null && staticFormTypes.Contains(entry.Str("type")) && entry["id"] != null && entry["mesh"] != null) {
+						string id = entry.Str("id");
+						string mesh = entry.Str("mesh").ToLower().Replace("\\", "/");
+						if(!models.ContainsKey(mesh)) {
+							Console.WriteLine($"missing mesh stats for {mesh}");
+							continue;
+						}
+						var modelStats = models[mesh];
+						if (modelStats.formCounts == null) {
+							modelStats.formCounts = new Dictionary<string, int>();
+							modelStats.formCountsTR = new Dictionary<string, int>();
+						}
+						modelStats.formCounts[id] = 0;
+						modelStats.formCountsTR[id] = 0;
+						idModels[id] = mesh;
+					}
+				}
+			}
+
+			Console.WriteLine("REFS....");
+			for (int espIdx = 0; espIdx < espPaths.Length; espIdx++) {
+				string espPath = espPaths[espIdx];
+				Console.WriteLine(espPath);
+
+				string espFilename = Path.GetFileName(espPath);
+				bool isVanilla = espFilename == "Morrowind.json" || espFilename == "Tribunal.json" || espFilename == "Bloodmoon.json";
+
+                JArray esp = JArray.Parse(File.ReadAllText(espPath));
+				for (int i = 0; i < esp.Count; i++) {
+					if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell") {
+						if (esp[i]["data"]["flags"].Value<string>().IndexOf("IS_INTERIOR") != -1) continue; //interior
+						JArray refs = (JArray)esp[i]["references"];
+						for (int refNum = 0; refNum < refs.Count; refNum++) {
+							string id = refs[refNum]["id"].Value<string>();
+							if (!idModels.ContainsKey(id)) continue;
+							var modelStats = models[idModels[id]];
+							if (isVanilla) modelStats.formCounts[id]++;
+							else modelStats.formCountsTR[id]++;
+						}
+					}
+				}
+			}
+
+			Console.WriteLine("\r\n\r\n");
+
+			foreach (var stats in models.Values) {
+				if(stats.formCounts == null) continue;
+
+				int meshCount = 0;
+				int trMeshCount = 0;
+
+				string modalForm = "";
+				int modalCount = -1;
+				foreach(string id in stats.formCounts.Keys) {
+					int count = stats.formCounts[id];
+					int trCount = stats.formCountsTR[id];
+					if(count + trCount > modalCount) {
+						modalCount = count + trCount;
+						modalForm = id;
+					}
+					meshCount += count;
+					trMeshCount += trCount;
+				}
+
+				if (meshCount == 0 && trMeshCount == 0) continue;
+
+				string tr = stats.tr ? "tr" : "mw";
+
+
+                Console.WriteLine($"{stats.sharedModel}|{modalForm}|{stats.model}|{tr}|{stats.category}|{stats.type}|{stats.dist}|{meshCount}|{trMeshCount}|{stats.tris}|{stats.trisDist}|{stats.comment}");
+			}
+		}
+
+
+		public static void TES3StaticList2(params string[] espPaths) {
             HashSet<string> staticFormTypes = new HashSet<string> { "Static", "Activator", "Container", "Door", };
 
             Dictionary<string, string> meshLodData = new Dictionary<string, string>();
@@ -1302,7 +1450,210 @@ namespace SmallScripts {
 
         }
 
-		public static void MapNpcs(string espPath) {
+		class CellInfo {
+			public string name;
+			public string type;
+			public string merge;
+			public bool settlement;
+
+			public static Dictionary<string, CellInfo> GetCellInfo(params string[] cellTypeFiles) {
+				var dict = new Dictionary<string, CellInfo>();
+				foreach (string cellTypeFile in cellTypeFiles) {
+					foreach (string line in File.ReadAllLines(cellTypeFile)) {
+						string[] split = line.Split('\t');
+						CellInfo info = new CellInfo() { name = split[0], type = split[1], merge = split[2], settlement = split[4] == "Settlement" };
+						dict[info.name] = info;
+					}
+				}
+				return dict;
+			}
+		}
+
+        public static void MapNpcsNew(params string[] espPaths) {
+			bool mapInsteadOfList = false;
+
+            int cellSize = 64;
+            int xAdd = 42 * 8192;
+            int yAdd = 38 * 8192;
+
+			var cellInfo = CellInfo.GetCellInfo(@"E:\Extracted\Morrowind\celltypesGF.txt");
+			Dictionary<(int, int), List<(float, float, CellInfo)>> cellDoors = new Dictionary<(int, int), List<(float, float, CellInfo)>>();
+
+            Dictionary<string, string> scriptText = new Dictionary<string, string>();
+
+            Dictionary<string, string> npcs = new Dictionary<string, string>();
+            HashSet<string> npcDisabled = new HashSet<string>();
+            HashSet<string> npcHostile = new HashSet<string>();
+
+			Dictionary<string, int> npcCounts = new Dictionary<string, int>();
+			Dictionary<string, int> guardCounts = new Dictionary<string, int>();
+
+			HashSet<string> guardNames = new HashSet<string>();
+
+			List<JToken> npcRefs = new List<JToken>();
+			foreach(string espPath in espPaths) {
+                JArray esp = JArray.Parse(File.ReadAllText(espPath));
+                for (int i = 0; i < esp.Count; i++) {
+                    var form = esp[i];
+                    string formType = form["type"].Str();
+                    if (formType == "Script") {
+                        scriptText[form.Str("id")] = form.Str("text");
+                    } else if (formType == "Npc") {
+                        string formId = form["id"].Str();
+                        if (form["data"]["stats"] != null && form["data"]["stats"]["health"].Int() == 0) continue;
+                        string npcName = form["name"].Str();
+                        if (npcName.StartsWith("Guard") || npcName.EndsWith("Guard") || npcName.EndsWith("Sharpshooter") || npcName.Contains("Ordinator")) guardNames.Add(npcName);
+                        npcs[formId] = npcName;
+                        if (form["ai_data"]["fight"].Value<int>() > 70) npcHostile.Add(formId);
+                        if (form["script"] != null) {
+                            string scriptName = form.Str("script");
+                            if (!scriptText.ContainsKey(scriptName)) continue;
+                            string script = scriptText[scriptName];
+                            script = script.Replace("\r\n", " ");
+                            script = script.Replace("\t", " ");
+                            foreach (string token in script.Split(new char[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries)) {
+                                if (token == "disable" || token == "Disable") {
+                                    npcDisabled.Add(formId);
+                                    break;
+                                }
+                            }
+                        }
+                    } else if (formType == "Cell") {
+                        if (form["data"]["flags"].Value<string>().IndexOf("IS_INTERIOR") != -1) {
+                            if (!mapInsteadOfList) {
+                                string cellName = form.Str("name");
+                                if (!cellInfo.ContainsKey(cellName)) continue;
+                                if (!cellInfo[cellName].settlement) continue;
+                                JArray refs = (JArray)form["references"];
+                                for (int refNum = 0; refNum < refs.Count; refNum++) {
+                                    string refId = refs[refNum].Str("id");
+                                    if (npcs.ContainsKey(refId)) {
+                                        string npcName = npcs[refId];
+                                        string mergeName = cellInfo[cellName].merge;
+                                        if (guardNames.Contains(npcName)) {
+                                            if (!guardCounts.ContainsKey(mergeName)) guardCounts[mergeName] = 0;
+                                            guardCounts[mergeName]++;
+                                        } else {
+                                            if (!npcCounts.ContainsKey(mergeName)) npcCounts[mergeName] = 0;
+                                            npcCounts[mergeName]++;
+                                        }
+                                        Console.WriteLine($"{cellInfo[cellName].merge}|{cellName}|{npcs[refId]}");
+                                    }
+                                }
+                            }
+                        } else {
+                            //Console.WriteLine(cellName);
+                            JArray refs = (JArray)form["references"];
+                            for (int refNum = 0; refNum < refs.Count; refNum++) {
+                                var reference = refs[refNum];
+
+                                if (reference["destination"] != null) {
+                                    float x = reference["translation"][0].Value<float>();
+                                    float y = reference["translation"][1].Value<float>();
+                                    int cellX = (int)(x / 8192);
+                                    int cellY = (int)(y / 8192);
+
+                                    string destinationCell = reference["destination"].Str("cell");
+                                    if (cellInfo.ContainsKey(destinationCell)) {
+                                        if (!cellDoors.ContainsKey((cellX, cellY))) cellDoors[(cellX, cellY)] = new List<(float, float, CellInfo)>();
+                                        cellDoors[(cellX, cellY)].Add((x, y, cellInfo[destinationCell]));
+                                    } else {
+                                        Console.WriteLine(destinationCell + " MISSING CELL INFO");
+                                    }
+                                } else if (npcs.ContainsKey(reference.Str("id"))) {
+                                    npcRefs.Add(reference);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
+			float defaultSearchDist = 3250;
+            Dictionary<string, float> settlementRadiusOverrides = new Dictionary<string, float>() {
+                { "Caldera", 2000 },
+				{ "Vivec", 6000 },
+				{ "Molag Mar", 6000 },
+				{ "Tel Aruhn",  5000 },
+
+                { "Fort Ancylis",  5000 },
+                { "Bal Foyen",  2000 },
+				{ "Dondril", 6000 },
+				{ "Ald Iuval", 3600 },
+				{ "Narsis", 4500 },
+				{ "Necrom", 10000 },
+				{ "Akamora", 4000 },
+				{ "Alt Bosara", 4000 },
+				{ "Marog", 4000 },
+				{ "Tel Mothrivra", 4000 },
+				{ "Port Telvannis", 11000 },
+				{ "Oran Plantation", 6400 }
+            };
+
+
+            foreach (var npc in npcRefs) {
+                string id = npc.Str("id");
+                float x = npc["translation"][0].Value<float>();
+                float y = npc["translation"][1].Value<float>();
+                int cellX = (int)(x / 8192);
+                int cellY = (int)(y / 8192);
+				string closestCell = "";
+				float findDist = float.MaxValue;
+				string closestSettlement = "";
+
+				for(int searchY = cellY - 1; searchY <= cellY + 1; searchY++) {
+					for (int searchX = cellX - 1; searchX <= cellX + 1; searchX++) {
+						if (cellDoors.ContainsKey((searchX, searchY))) {
+							foreach (var door in cellDoors[(searchX, searchY)]) {
+								if (!door.Item3.settlement) continue;
+								float xDist = door.Item1 - x; xDist = xDist * xDist;
+								float yDist = door.Item2 - y; yDist = yDist * yDist;
+								float dist = xDist + yDist;
+								if (dist < findDist) {
+                                    findDist = dist;
+									closestCell = mapInsteadOfList ? $"|{door.Item3.name} {(int)(Math.Sqrt(findDist))}" : door.Item3.name;
+									closestSettlement = door.Item3.merge;
+								}
+
+                            }
+						}
+					}
+                }
+				float searchDist = settlementRadiusOverrides.ContainsKey(closestSettlement) ? settlementRadiusOverrides[closestSettlement] : defaultSearchDist;
+                searchDist = searchDist * searchDist;
+
+                float xMap = (x + xAdd) * cellSize / 8192;
+                float yMap = (yAdd - y) * cellSize / 8192;
+                string extraClass = searchDist > findDist ? " settlement" : npcDisabled.Contains(id) ? " disable" : npcHostile.Contains(id) ? " hostile" : "";
+				if(mapInsteadOfList) {
+                    Console.Write($"<div class=\"npc{extraClass}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{npcs[id]}{closestCell}\"></div>"); Console.WriteLine();
+                } else {
+                    if (extraClass == " settlement") {
+                        string npcName = npcs[id];
+                        if (guardNames.Contains(npcName)) {
+                            if (!guardCounts.ContainsKey(closestSettlement)) guardCounts[closestSettlement] = 0;
+                            guardCounts[closestSettlement]++;
+                        } else {
+                            if (!npcCounts.ContainsKey(closestSettlement)) npcCounts[closestSettlement] = 0;
+                            npcCounts[closestSettlement]++;
+                        }
+                        Console.WriteLine($"{closestSettlement}|Near {closestCell}|{npcName}");
+                    }
+                }
+                //Console.WriteLine($"{npcs[id]} | {closestCell}");
+            }
+
+			Console.WriteLine();
+			foreach(string settlement in npcCounts.Keys) {
+				int guardCount = guardCounts.ContainsKey(settlement) ? guardCounts[settlement] : 0;
+				Console.WriteLine($"{settlement}|{npcCounts[settlement]}|{guardCount}");
+			}
+
+        }
+
+
+        public static void MapNpcs(string espPath) {
             int cellSize = 64;
             int xAdd = 42 * 8192;
             int yAdd = 38 * 8192;
@@ -1355,6 +1706,42 @@ namespace SmallScripts {
 						string extraClass = npcDisabled.Contains(refId) ? " disable" : npcHostile.Contains(refId) ? " hostile" : "";
                         Console.Write($"<div class=\"npc{extraClass}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{npcs[refId]}\"></div>"); Console.WriteLine();
                         
+                    }
+                }
+            }
+        }
+
+		public static void CellListAll(string cellTypesFilePath, params string[] espPaths) {
+            Dictionary<string, string> cellTypes = new Dictionary<string, string>();
+			Dictionary<string, string> cellGroups = new Dictionary<string, string>();
+			Dictionary<string, string> cellRegions = new Dictionary<string, string>();
+            foreach (string line in File.ReadAllLines(cellTypesFilePath)) {
+                var split = line.Split('\t');
+                cellTypes[split[0]] = split[1];
+				cellGroups[split[0]] = split[2];
+				cellRegions[split[0]] = split[3];
+            }
+			HashSet<string> noDupes = new HashSet<string>();
+			foreach(string espPath in espPaths) {
+                JArray esp = JArray.Parse(File.ReadAllText(espPath));
+                for (int i = 0; i < esp.Count; i++) {
+                    var form = esp[i];
+                    string formType = form["type"].Str();
+                    if (formType == "Cell") {
+                        if (form["data"]["flags"].Value<string>().IndexOf("IS_INTERIOR") == -1) continue;
+                        string name = form.Str("name");
+						if (noDupes.Contains(name)) continue;
+						noDupes.Add(name);
+                        string type = "UNKNOWN";
+                        string group = "";
+                        string region = type;
+                        if (cellTypes.ContainsKey(name)) {
+                            type = cellTypes[name];
+                            group = cellGroups[name];
+                            region = cellRegions[name];
+                        } else {
+                            Console.WriteLine($"{name}@{type}@{group}@{region}");
+                        }
                     }
                 }
             }
@@ -1419,7 +1806,8 @@ namespace SmallScripts {
                                 }
                                 mergePositions[mergeName].Add(new Float2 { x = xMap, y = yMap });
                             } else {
-                                Console.Write($"<div class=\"icon {type.Substring(0, 3)} {type} {region}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{cellName}\"></div>"); Console.WriteLine();
+                                Console.Write($"<div class=\"icon {type.Substring(0, 3)} {type} {region}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{cellName}\"></div>"); 
+								Console.WriteLine();
                             }
                         } else {
                             //Console.WriteLine($"{cellName} -> ({xMap},{yMap})");
@@ -1540,7 +1928,62 @@ namespace SmallScripts {
 			//foreach (string cell in cells) Console.WriteLine(cell);
 
 		}
-		public static void MWQuests(params string[] espPaths) {
+
+		class Quest {
+			public string name;
+			public string nameHistory;
+			public string added;
+			public string removed;
+		}
+
+        public static void MWQuestHistory() {
+
+			Dictionary<string, Quest> quests = new Dictionary<string, Quest>();
+
+			foreach(string path in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\trhistory", "*.txt")) {
+				string version = Path.GetFileName(path).Substring(0, 5);
+				HashSet<string> questCheck = new HashSet<string>(quests.Keys);
+
+				foreach (string line in File.ReadAllLines(path)) {
+					string[] words = line.Split('|');
+					string id = words[0];
+					questCheck.Remove(id);
+                    string name = words[1];
+					if (!quests.ContainsKey(id)) {
+						Quest q = new Quest();
+						q.name = name;
+						q.added = version;
+						q.nameHistory = "";
+						q.removed = "";
+						quests[id] = q;
+					} else {
+                        var q = quests[id];
+						if(q.name != name) {
+							if(q.name.ToLower() != name.ToLower()) q.nameHistory += $"{q.name} (until {version})";
+                            q.name = name;
+						}
+						if (q.removed != "") q.removed = "";
+                    }
+					foreach(string missingQuest in questCheck) {
+						if (quests[missingQuest].removed == "") quests[missingQuest].removed = version;
+					}
+                }
+
+
+
+			}
+
+            foreach (string id in quests.Keys) {
+                var q = quests[id];
+				int i = q.name.IndexOf(':');
+				string category = i == -1 ? "" : q.name.Substring(0, i);
+				if(q.added == "22.11" || q.removed == "22.11")
+                Console.WriteLine($"{q.added}|{q.removed}|{id}|{category}|{q.name}|{q.nameHistory}");
+            }
+        }
+
+        public static void MWQuests(params string[] espPaths) {
+			string unnamed = "Unnamed";
 
 			Dictionary<string, string> questNames = new Dictionary<string, string>();
 			Dictionary<string, string> questFiles = new Dictionary<string, string>();
@@ -1556,8 +1999,8 @@ namespace SmallScripts {
 						if (type == "Journal") {
 							string id = esp[i]["id"].Value<string>();
 							if(!questFiles.ContainsKey(id)) questFiles[id] = file;
-							if (!questNames.ContainsKey(id) || questNames[id] == "NO QUEST NAMEAAAAAAAAAAAAAAAAAAAAA") {
-								string name = "NO QUEST NAMEAAAAAAAAAAAAAAAAAAAAA";
+							if (!questNames.ContainsKey(id) || questNames[id] == unnamed) {
+								string name = unnamed;
 								string zero = null;
 								string name2 = null;
 								i++;
@@ -1568,8 +2011,8 @@ namespace SmallScripts {
 									} else if (esp[i]["quest_name"] != null) name2 = esp[i]["text"].Value<string>();
 									i++;
 								}
-								if (name == "NO QUEST NAMEAAAAAAAAAAAAAAAAAAAAA" && zero != null) questNames[id] = zero;
-								else if (name == "NO QUEST NAMEAAAAAAAAAAAAAAAAAAAAA" && name2 != null) questNames[id] = name2;
+								if (name == unnamed && zero != null) questNames[id] = zero;
+								else if (name == unnamed && name2 != null) questNames[id] = name2;
 								else questNames[id] = name;
 								i--;
 							}
@@ -1578,10 +2021,14 @@ namespace SmallScripts {
 					i++;
 				}
 			}
-			foreach (string quest in questNames.Keys) Console.WriteLine(questFiles[quest] + "|" + quest + "|" + questNames[quest]);
-		}
+            using (TextWriter w = new StreamWriter(File.Open(espPaths[0] + "_quests.txt", FileMode.Create))) {
+                foreach (string quest in questNames.Keys) w.WriteLine(quest + "|" + questNames[quest]);
+            }
 
-		public static void MWBooks(string espPath) {
+
+        }
+
+        public static void MWBooks(string espPath) {
 			JArray esp = JArray.Parse(File.ReadAllText(espPath));
 			for (int i = 0; i < esp.Count; i++) {
 				if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Book") {
