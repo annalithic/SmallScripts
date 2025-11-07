@@ -94,18 +94,104 @@ namespace SmallScripts {
             } catch { }
         }
 
+		static void GIMapCompose(string folder = @"E:\Extracted\GI\EXPORT\Texture2D\Scaled") {
+			Dictionary<(int, int), string> images = new Dictionary<(int, int), string>();
+			int xMin = int.MaxValue;
+			int xMax = int.MinValue;
+			int yMin = int.MaxValue;
+			int yMax = int.MinValue;
+			foreach(string path in Directory.EnumerateFiles(folder, "*.webp")) {
+				var words = Path.GetFileNameWithoutExtension(path).Split('_');
+				int x = int.Parse(words[3]) * -1;
+				if(x < xMin) xMin = x;
+				if(x > xMax) xMax = x;
+				int y = int.Parse(words[2]) * -1;
+				if(y < yMin) yMin = y;
+				if(y > yMax) yMax = y;
+				images[(x,y)] = path;
+			}
+			Console.WriteLine($"{xMin},{yMin} to {xMax},{yMax}");
+			MagickImageCollection montage = new MagickImageCollection();
+			for(int y = yMin; y <= yMax; y++) {
+				for(int x = xMin; x <= xMax; x++) {
+					if(images.ContainsKey((x,y))) {
+						montage.Add(new MagickImage(images[(x,y)]));
+					} else {
+						montage.Add(new MagickImage(MagickColors.Black, 1024, 1024));
+					}
+					Console.WriteLine($"{x},{y}");
+				}
+			}
+			var combined = montage.Montage(new MontageSettings() { Geometry = new MagickGeometry(1024), TileGeometry = new MagickGeometry(xMax + 1 - xMin, yMax + 1 - yMin) });
+            combined.Write(Path.Combine(folder, "mapbig.png"));
+		}
+
 
         static void Main(string[] args) {
-			TES3.MapNpcs(@"E:\Extracted\Morrowind\TR_Mainland.json"); return;
 
+			TES3.MapFlora(
+				@"E:\Extracted\Morrowind\Morrowind.json",
+                @"E:\Extracted\Morrowind\Tribunal.json",
+                @"E:\Extracted\Morrowind\Bloodmoon.json",
+                @"E:\Extracted\Morrowind\trdata.json",
+                @"E:\Extracted\Morrowind\trhistory\25.08.TR_Mainland.esm.json"
+
+                ); return;
+            //TES3.CellListAll(@"F:\Extracted\Morrowind\celltypesGF.txt", @"E:\Extracted\Morrowind\trhistory\25.08.TR_Mainland.esm.json"); return;
+
+
+            TES3.MapNpcsNew(@"E:\Extracted\Morrowind\trdata.json", @"E:\Extracted\Morrowind\trhistory\25.08.TR_Mainland.esm.json"); return;
+
+
+
+            //TES3.MWQuests(@"E:\Extracted\Morrowind\trhistory\22.11.TR_Mainland.esm.json"); return;
+            TES3.MWQuestHistory(); return;
+
+			foreach(string trpath in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\trhistory", "*.json")) {
+				TES3.MWQuests(trpath);
+			}
+			return;
+
+            TES3.DoorsMerged(@"E:\Extracted\Morrowind\tr_ow_oct25.json", false);
+            TES3.DoorsMerged(@"E:\Extracted\Morrowind\tr_ss_oct25.json", false); 
+			return;
+
+            GIMapCompose(@"E:\Extracted\GI\6.0\Texture2D\Scaled"); return;
+
+            HollowKnight.ReadScene();
+			return;
+
+            PoE.PoeUIImages(@"C:\Extracted\PathOfExile\0.3.0\art"); return;
+
+            //TES3.DoorsMerged(@"E:\Extracted\Morrowind\WBM.json", false);
+            //TES3.DoorsMerged(@"E:\Extracted\Morrowind\CM.json", false);
+            //TES3.DoorsMerged(@"E:\Extracted\Morrowind\PS.json", false); return;
+
+
+            TES3.TES3StaticList3(
+                @"E:\Extracted\Morrowind\Morrowind.json",
+                @"E:\Extracted\Morrowind\Tribunal.json",
+                @"E:\Extracted\Morrowind\Bloodmoon.json",
+                @"E:\Extracted\Morrowind\TD.json",
+                @"E:\Extracted\Morrowind\TR_MERGE_25_07_30.json"
+                ); return;
+
+            TES3.CreateBlankDistMeshes(@"C:\Games\MorrowindMods\Tamriel Data\00 Data Files\meshes", @"C:\Games\MorrowindMods\blankdist_tr\meshes");
+            TES3.CreateBlankDistMeshes(@"C:\Games\MorrowindMods\TamrielDataMain\00 Data Files\meshes", @"C:\Games\MorrowindMods\blankdist_tr\meshes");
+            TES3.CreateBlankDistMeshes(@"E:\Extracted\Morrowind\vanilla\meshes", @"C:\Games\MorrowindMods\blankdist\meshes"); return;
+            return;
+            TES3.MWDoors(@"E:\Extracted\Morrowind\TR_Mainland.json", 7.9375f, -46.125f, 0.9375f); return; //sadrathim
+            TES3.MWDoors(@"E:\Extracted\Morrowind\TR_Mainland.json", 2.8125f, -39.1875f, 1.0f); return; //othmura
             TES3.MWDoors(@"E:\Extracted\Morrowind\TR_Mainland.json", 0.5625f, -44.3125f, 1.5f); return; //hlerynhul
+            TES3.MWDoors(@"E:\Extracted\Morrowind\TR_Mainland.json", 4.75f, -52, 3.5f); return; //naris
+
+
 
             //MapGenieMontage2(@"E:\Extracted\ACRED\tiles"); return;
             //MapGenieRequest(); return;
             TES3.TES3QuestInfo(@"E:\Extracted\Morrowind\TR_Mainland.json"); return;
             TES3.DoorsMerged(@"E:\Extracted\Morrowind\TR_Mainland.json", true); return;
             TES3.MWListUnknownUnusedDoorCells(@"E:\Extracted\Morrowind\TR_Mainland.json"); return;
-            TES3.MWDoors(@"E:\Extracted\Morrowind\TR_Mainland.json", 4.75f, -52, 3.5f); return; //naris
             //TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json"); return;
             //TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 5.125f, -34.125f, 0.75f); return; //idathren
             //TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 0.875f, -32.5f, 1.75f); return; //hlan oek
@@ -114,7 +200,6 @@ namespace SmallScripts {
             //TES3.MWDoors(@"F:\Extracted\BGS\tr_mainland.json", 24.75f, 0.75f, 1); return; //Helnim
 
 
-            PoE.PoeUIImages(@"E:\Extracted\PathOfExile2\Day5\art"); return;
 
 			Souls.EldenRingMapCompose4("00"); return;
 

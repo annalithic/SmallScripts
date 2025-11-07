@@ -11,6 +11,7 @@ using Util;
 using System.Diagnostics;
 using System.Text;
 using System.Runtime.CompilerServices;
+using System.Dynamic;
 
 namespace MW {
 	struct QuestStage {
@@ -1468,6 +1469,141 @@ namespace SmallScripts {
 				return dict;
 			}
 		}
+
+		
+		struct Vector2 {
+			public float x;
+			public float y;
+		}
+
+		public static void MapFlora(params string[] espPaths) {
+			int cellSize = 64;
+			int xAdd = 42 * 8192;
+			int yAdd = 38 * 8192;
+
+			float minX = float.MaxValue;
+			float minY = float.MaxValue;
+			float maxX = float.MinValue;
+			float maxY = float.MinValue;
+
+			Dictionary<string, string> floraIds = new Dictionary<string, string>();
+			Dictionary<string, List<Vector2>> floraPositions = new Dictionary<string, List<Vector2>>();
+			Dictionary<string, Dictionary<string, int>> floraRegionCounts = new Dictionary<string, Dictionary<string, int>>();
+			Dictionary<string, int> floraEspIds = new Dictionary<string, int>();
+			Dictionary<string, int> regionCellCounts = new Dictionary<string, int>();
+			Dictionary<string, int> floraTotals = new Dictionary<string, int>();
+
+			for (int espIndex = 0; espIndex < espPaths.Length; espIndex++) {
+				Console.WriteLine(espPaths[espIndex]);
+				JArray esp = JArray.Parse(File.ReadAllText(espPaths[espIndex]));
+				for (int i = 0; i < esp.Count; i++) {
+					var form = esp[i];
+					string formType = form["type"].Str();
+					if (formType == "Container") {
+						string id = form.Str("id");
+						if (id.Contains("Flora") || id.Contains("flora")) {
+							string floraType = form.Str("name");
+							//int letter = id.Length - 1;
+							//while (letter >= 0 && (char.IsDigit(id[letter]) || id[letter] == '_')) {
+							//	letter--;
+							//}
+							//string floraType = id.Substring(0, letter + 1);
+							//Console.WriteLine($"{id} - {floraType} - {form.Str("name")}");
+							floraIds[id] = floraType;
+							if (!floraEspIds.ContainsKey(floraType)) {
+								floraTotals[floraType] = 0;
+								floraEspIds[floraType] = espIndex;
+							}
+						}
+					} else if (formType == "Cell") {
+						if (form["data"]["flags"].Value<string>().IndexOf("IS_INTERIOR") != -1) {
+
+						} else {
+
+							string region = form["region"] == null ? "NO REGION" : form.Str("region");
+							if(!regionCellCounts.ContainsKey(region)) regionCellCounts[region] = 0;
+							regionCellCounts[region]++;
+							//Console.WriteLine(cellName);
+							JArray refs = (JArray)form["references"];
+							for (int refNum = 0; refNum < refs.Count; refNum++) {
+								var reference = refs[refNum];
+								string refId = reference.Id();
+								if (floraIds.ContainsKey(refId)) {
+									string floraType = floraIds[refId];
+									if(!floraRegionCounts.ContainsKey(floraType)) floraRegionCounts[floraType] = new Dictionary<string, int>();
+									var regionCounts = floraRegionCounts[floraType];
+									if (!regionCounts.ContainsKey(region)) regionCounts[region] = 0;
+									regionCounts[region]++;
+									floraTotals[floraType]++;
+
+									if (!floraPositions.ContainsKey(floraType)) floraPositions[floraType] = new List<Vector2>();
+									float x = reference["translation"][0].Value<float>();
+									float y = reference["translation"][1].Value<float>();
+                                    if (x < minX) minX = x;
+                                    if (x > maxX) maxX = x;
+									if (y < minY) minY = y;
+									if (y > maxY) maxY = y;
+									floraPositions[floraType].Add(new Vector2 { x = x, y = y });
+
+
+									//float xMap = (x + xAdd) * cellSize / 8192;
+									//float yMap = (yAdd - y) * cellSize / 8192;
+									//Console.WriteLine($"<div class=\"flora {floraType}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{refId}\"></div>");
+								}
+							}
+						}
+					}
+				}
+			}
+
+			foreach (string floraType in floraRegionCounts.Keys) {
+				if (floraTotals[floraType] < 2) continue;
+				var regionCounts = floraRegionCounts[floraType];
+                foreach (string region in regionCounts.Keys) {
+					int count = regionCounts[region];
+					Console.WriteLine($"{floraEspIds[floraType]}|{floraType}|{region}|{count}|{((float)count)/regionCellCounts[region]}");
+                }
+            }
+
+
+
+            return;
+			int cellMinX = (int)(minX / 8192) - 1;
+			int cellMinY = (int)(minY / 8192) - 1;
+			int cellMaxX = (int)(maxX / 8192) + 1;
+			int cellMaxY = (int)(maxY / 8192) + 1;
+			int cellsX = cellMaxX - cellMinX;
+			int cellsY = cellMaxY - cellMinY;
+			
+			Console.WriteLine($"({cellMinX},{cellMinY}) to ({cellMaxX},{cellMaxY})");
+			//MagickImageCollection images = new MagickImageCollection();
+
+			foreach (string floraType in floraPositions.Keys) {
+				Console.WriteLine(floraType);
+				byte[] data = new byte[cellsX * cellSize * cellsY * cellSize * 4];
+
+				foreach (Vector2 pos in floraPositions[floraType]) {
+					int xMap = (int)(pos.x * cellSize / 8192) - (cellMinX * cellSize);
+                    int yMap = (int)(pos.y * cellSize / 8192) - (cellMinY * cellSize);
+					int offset = (xMap + yMap * cellSize * cellsX) * 4;
+					byte newval = (byte)Math.Min(data[offset] + 64, 255);
+                    data[offset] = newval;
+					data[offset + 1] = newval;
+					data[offset + 2] = newval;
+					data[offset + 3] = 255;
+				}
+
+                MagickImage image = new MagickImage(data, new MagickReadSettings { Width = cellsX * cellSize, Height = cellsY * cellSize, Depth = 8, Format = MagickFormat.Rgba });
+				image.Blur(8, 2);
+				image.Level(0, 8192);
+				//images.Add(image);
+                WebPWriteDefines defines = new WebPWriteDefines() { Lossless = true };
+                image.Write(@"E:\Extracted\Morrowind\floramaps\" + floraType + ".webp", defines);
+
+            }
+			//images.Write(@"E:\Extracted\Morrowind\floramaps\floramaps.psd");
+        }
+
 
         public static void MapNpcsNew(params string[] espPaths) {
 			bool mapInsteadOfList = false;
