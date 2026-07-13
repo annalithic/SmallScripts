@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Runtime.CompilerServices;
 using System.Dynamic;
+using System.Xml.Linq;
 
 namespace MW {
 	struct QuestStage {
@@ -127,6 +128,112 @@ namespace SmallScripts {
             @"C:\Games\MorrowindMods\lodbuildfar\meshes",
 
         };
+
+        public static void ListCellsNew(params string[] espPaths) {
+
+			var exteriors = new List<(int id, string name, bool isInterior, HashSet<string> regions)>();
+			var interiors = new Dictionary<string, (int id, string name, bool isInterior, HashSet<string> regions)>();
+
+            var interiorRegionsPropagated = new HashSet<string>();
+            var interiorRegionsFrontier = new HashSet<string>();
+			var interiorRegionsFrontierNew = new HashSet<string>();
+
+            foreach (string espPath in espPaths) {
+                JArray esp = JArray.Parse(File.ReadAllText(espPath));
+				for (int i = 0; i < esp.Count; i++) {
+					var form = esp[i];
+                    if (form.Str("type") != "Cell") continue;
+                    (int id, string name, bool isInterior, HashSet<string> regions) cell = (i, form.Str("name"), form["data"].Str("flags").IndexOf("IS_INTERIOR") != -1, new HashSet<string>());
+					if(cell.isInterior) {
+                        if (((JArray)form["references"]).Count == 0) continue;
+                        interiors[cell.name] = cell;
+
+                    } else {
+                        cell.regions.Add(form["region"] == null ? "NO_REGION" : form.Str("region"));
+                        exteriors.Add(cell);
+
+					}
+					
+                }
+
+                foreach (var exterior in exteriors) {
+					var form = esp[exterior.id];
+
+                    foreach(JObject reference in (JArray)form["references"]) {
+						if (reference["destination"] == null) continue;
+						string destination = reference["destination"].Str("cell");
+						if (!interiors.ContainsKey(destination)) continue;
+						var interior = interiors[destination];
+						foreach(var region in exterior.regions) interior.regions.Add(region);
+						interiorRegionsFrontier.Add(destination);
+                    }
+                }
+
+				//TODO THIS IS WRONG NEED PROPER TREE SEARCH?
+				while(interiorRegionsFrontier.Count > 0) {
+					Console.WriteLine($"FRONTIER LENGTH {interiorRegionsFrontier.Count}");
+					foreach(var frontierCellName in interiorRegionsFrontier) {
+						var interior = interiors[frontierCellName];
+                        var form = esp[interior.id];
+                        foreach (JObject reference in (JArray)form["references"]) {
+                            if (reference["destination"] == null) continue;
+                            string destination = reference["destination"].Str("cell");
+
+                            if (!interiors.ContainsKey(destination)) continue;
+                            if (interiorRegionsPropagated.Contains(destination)) continue;
+
+                            var destinationInterior = interiors[destination];
+                            foreach (var region in interior.regions) destinationInterior.regions.Add(region);
+							interiorRegionsFrontierNew.Add(destination);
+							interiorRegionsPropagated.Add(frontierCellName);
+                        }
+                    }
+					interiorRegionsFrontier = new HashSet<string>(interiorRegionsFrontierNew);
+					interiorRegionsFrontierNew.Clear();
+				}
+            }
+
+			foreach (string cell in interiors.Keys) {
+				StringBuilder s = new StringBuilder();
+				s.Append(cell); s.Append("@");
+				if (interiors[cell].regions.Count > 0) {
+                    foreach (string region in interiors[cell].regions) {
+                        s.Append(region); s.Append(", ");
+                    }
+                    s.Remove(s.Length - 2, 2);
+                }
+                Console.WriteLine(s.ToString());
+			}
+			Console.WriteLine();
+        }
+
+
+        public static void UESPQuestRead(string file = @"C:\Users\a\Downloads\UESPWiki-20260312044642.xml") {
+			System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+			doc.LoadXml(File.ReadAllText(file));
+			foreach (System.Xml.XmlNode page in doc.DocumentElement.ChildNodes) {
+				if (page.Name != "page") continue;
+				string pageName = page["title"].InnerText;
+				if (pageName.StartsWith("Category:")) continue;
+				string location = "NO LOCATION";
+				string type = "NO TYPE";
+				string id = "NO ID";
+				string giver = "NO GIVER";
+				string desc = "NO DESC";
+				string text = page["revision"]["text"].InnerText;
+				if (text.StartsWith("#REDIRECT")) continue;
+
+                string[] lines = text.Split('\n');
+				foreach (string line in lines) {
+					if(line.StartsWith("|Loc="))  location = line.Substring(5);
+					else if(line.StartsWith("|ID=")) id = line.Substring(4);
+                    else if (line.StartsWith("|Giver=")) giver = line.Substring(7);
+                    else if (line.StartsWith("|type=")) type = line.Substring(6);
+                    else if (line.StartsWith("|description=")) desc = line.Substring(13);
+                }
+				Console.WriteLine($"{pageName}@{type}@{id}@{giver}@{location}@{desc}");
+			}
+		}
 
 		public static void CreateBlankDistMeshes(string folder, string outfolder, string emptyMeshPath = @"E:\Extracted\Morrowind\empty.nif") {
 			foreach (string path in Directory.EnumerateFiles(folder, "*.nif", SearchOption.AllDirectories)) {
@@ -463,6 +570,25 @@ namespace SmallScripts {
 			}
 		}
 
+
+		public static void ListRegions(params string[] espPaths) {
+			Dictionary<string, string> regions = new Dictionary<string, string>();
+
+            foreach (string espPath in espPaths) {
+                Console.WriteLine(espPath);
+                JArray esp = JArray.Parse(File.ReadAllText(espPath));
+                for (int i = 0; i < esp.Count; i++) {
+                    var entry = esp[i];
+                    if (entry["type"] != null && entry.Str("type") == "Region") {
+						regions[entry.Str("id")] = entry.Str("name");
+                    }
+                }
+            }
+
+			foreach(string region in regions.Keys) {
+				Console.WriteLine($"{region}@{regions[region]}");
+			}
+        }
 
 		public static void TES3StaticList2(params string[] espPaths) {
             HashSet<string> staticFormTypes = new HashSet<string> { "Static", "Activator", "Container", "Door", };
@@ -1556,18 +1682,18 @@ namespace SmallScripts {
 				}
 			}
 
-			foreach (string floraType in floraRegionCounts.Keys) {
-				if (floraTotals[floraType] < 2) continue;
-				var regionCounts = floraRegionCounts[floraType];
-                foreach (string region in regionCounts.Keys) {
-					int count = regionCounts[region];
-					Console.WriteLine($"{floraEspIds[floraType]}|{floraType}|{region}|{count}|{((float)count)/regionCellCounts[region]}");
-                }
-            }
+			//foreach (string floraType in floraRegionCounts.Keys) {
+			//	if (floraTotals[floraType] < 2) continue;
+			//	var regionCounts = floraRegionCounts[floraType];
+   //             foreach (string region in regionCounts.Keys) {
+			//		int count = regionCounts[region];
+			//		Console.WriteLine($"{floraEspIds[floraType]}|{floraType}|{region}|{count}|{((float)count)/regionCellCounts[region]}");
+   //             }
+   //         }
 
 
 
-            return;
+            //return;
 			int cellMinX = (int)(minX / 8192) - 1;
 			int cellMinY = (int)(minY / 8192) - 1;
 			int cellMaxX = (int)(maxX / 8192) + 1;
@@ -1594,6 +1720,7 @@ namespace SmallScripts {
 				}
 
                 MagickImage image = new MagickImage(data, new MagickReadSettings { Width = cellsX * cellSize, Height = cellsY * cellSize, Depth = 8, Format = MagickFormat.Rgba });
+				image.Flip();
 				image.Blur(8, 2);
 				image.Level(0, 8192);
 				//images.Add(image);
@@ -2113,7 +2240,7 @@ namespace SmallScripts {
                 var q = quests[id];
 				int i = q.name.IndexOf(':');
 				string category = i == -1 ? "" : q.name.Substring(0, i);
-				if(q.added == "22.11" || q.removed == "22.11")
+				//if(q.added == "22.11" || q.removed == "22.11")
                 Console.WriteLine($"{q.added}|{q.removed}|{id}|{category}|{q.name}|{q.nameHistory}");
             }
         }

@@ -10,6 +10,7 @@ using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Net;
+using System.Text;
 
 namespace SmallScripts {
 	class Program {
@@ -94,40 +95,86 @@ namespace SmallScripts {
             } catch { }
         }
 
-		static void GIMapCompose(string folder = @"E:\Extracted\GI\EXPORT\Texture2D\Scaled") {
+		static void GIMapCompose(string folder = @"E:\Extracted\GI\EXPORT\Texture2D\Scaled", int tileSize = 512) {
 			Dictionary<(int, int), string> images = new Dictionary<(int, int), string>();
 			int xMin = int.MaxValue;
 			int xMax = int.MinValue;
 			int yMin = int.MaxValue;
 			int yMax = int.MinValue;
-			foreach(string path in Directory.EnumerateFiles(folder, "*.webp")) {
+			foreach(string path in Directory.EnumerateFiles(folder, "*.jxl")) {
 				var words = Path.GetFileNameWithoutExtension(path).Split('_');
-				int x = int.Parse(words[3]) * -1;
+				int x = int.Parse(words[words.Length - 1]) * -1;
 				if(x < xMin) xMin = x;
 				if(x > xMax) xMax = x;
-				int y = int.Parse(words[2]) * -1;
+				int y = int.Parse(words[words.Length - 2]) * -1;
 				if(y < yMin) yMin = y;
 				if(y > yMax) yMax = y;
 				images[(x,y)] = path;
 			}
 			Console.WriteLine($"{xMin},{yMin} to {xMax},{yMax}");
+			Console.WriteLine($"{(xMax - xMin) * tileSize}x{(yMax - yMin) * tileSize}");
 			MagickImageCollection montage = new MagickImageCollection();
 			for(int y = yMin; y <= yMax; y++) {
 				for(int x = xMin; x <= xMax; x++) {
 					if(images.ContainsKey((x,y))) {
 						montage.Add(new MagickImage(images[(x,y)]));
 					} else {
-						montage.Add(new MagickImage(MagickColors.Black, 1024, 1024));
+						montage.Add(new MagickImage(MagickColors.Black, tileSize, tileSize));
 					}
 					Console.WriteLine($"{x},{y}");
 				}
 			}
-			var combined = montage.Montage(new MontageSettings() { Geometry = new MagickGeometry(1024), TileGeometry = new MagickGeometry(xMax + 1 - xMin, yMax + 1 - yMin) });
-            combined.Write(Path.Combine(folder, "mapbig.png"));
+			Console.WriteLine("montaging...");
+			var combined = montage.Montage(new MontageSettings() { Geometry = new MagickGeometry(tileSize), TileGeometry = new MagickGeometry(xMax + 1 - xMin, yMax + 1 - yMin) });
+			combined.Quality = 100;
+			Console.WriteLine("writing...");
+            combined.Write(Path.Combine(folder, "mapbig.jxl"), new JxlWriteDefines() { Effort = 1 } );
 		}
 
 
         static void Main(string[] args) {
+
+            TES3.ListCellsNew(@"E:\Extracted\Morrowind\trhistory\26.07.13.TR_Mainland_DEV.json"); return;
+
+
+            TES3.ListRegions(
+				@"E:\Extracted\Morrowind\Morrowind.json",
+                @"E:\Extracted\Morrowind\Bloodmoon.json",
+                @"E:\Extracted\Morrowind\trhistory\26.07.13.Tamriel_Data.json");
+            return;
+
+
+            TES3.ListRegions(@"E:\Extracted\Morrowind\trhistory\26.07.13.TR_Mainland_DEV.json"); return;
+
+            //TES3.CellListAll(@"F:\Extracted\Morrowind\celltypesGF.txt", @"E:\Extracted\Morrowind\trhistory\25.08.TR_Mainland.esm.json"); return;
+
+
+            GIMapCompose(@"E:\Extracted\GI\6.7\Texture2D\scaled"); return;
+
+            PoE.PoeUIImages(@"C:\Extracted\PathOfExile\0.5.0\art"); return;
+
+            PoE.SkillTreeExportIcons(); return;
+
+
+
+            GIMapCompose(@"E:\Extracted\GI\6.6\map"); return;
+
+            TES3.DoorsMerged(@"E:\Extracted\Morrowind\26.05.21.TR_Mainland_DEV.json", false); return;
+
+            TES3.UESPQuestRead(); return;
+            TES3.MWQuestHistory(); return;
+            TES3.MWQuests(@"E:\Extracted\Morrowind\26.03.11.TR_Mainland_DEV.json"); return;
+
+
+
+            GILodMove(); return;
+            
+
+
+
+            TES3.ListRegions(@"E:\Extracted\Morrowind\Morrowind.json",
+                @"E:\Extracted\Morrowind\trdata.json");
+			return;
 
 			TES3.MapFlora(
 				@"E:\Extracted\Morrowind\Morrowind.json",
@@ -137,7 +184,6 @@ namespace SmallScripts {
                 @"E:\Extracted\Morrowind\trhistory\25.08.TR_Mainland.esm.json"
 
                 ); return;
-            //TES3.CellListAll(@"F:\Extracted\Morrowind\celltypesGF.txt", @"E:\Extracted\Morrowind\trhistory\25.08.TR_Mainland.esm.json"); return;
 
 
             TES3.MapNpcsNew(@"E:\Extracted\Morrowind\trdata.json", @"E:\Extracted\Morrowind\trhistory\25.08.TR_Mainland.esm.json"); return;
@@ -145,7 +191,7 @@ namespace SmallScripts {
 
 
             //TES3.MWQuests(@"E:\Extracted\Morrowind\trhistory\22.11.TR_Mainland.esm.json"); return;
-            TES3.MWQuestHistory(); return;
+            
 
 			foreach(string trpath in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\trhistory", "*.json")) {
 				TES3.MWQuests(trpath);
@@ -156,12 +202,10 @@ namespace SmallScripts {
             TES3.DoorsMerged(@"E:\Extracted\Morrowind\tr_ss_oct25.json", false); 
 			return;
 
-            GIMapCompose(@"E:\Extracted\GI\6.0\Texture2D\Scaled"); return;
 
             HollowKnight.ReadScene();
 			return;
 
-            PoE.PoeUIImages(@"C:\Extracted\PathOfExile\0.3.0\art"); return;
 
             //TES3.DoorsMerged(@"E:\Extracted\Morrowind\WBM.json", false);
             //TES3.DoorsMerged(@"E:\Extracted\Morrowind\CM.json", false);
@@ -644,6 +688,18 @@ namespace SmallScripts {
 			//toc.Print();
 		}
 
+		static void GILodMove(string path = @"E:\Extracted\GI\6.3\Mesh") {
+			var match = new System.Text.RegularExpressions.Regex(".*_Lod\\d.obj");
+
+            foreach (string file in Directory.EnumerateFiles(path, "*.obj")) {
+				if(match.IsMatch(file)) {
+					int lodLevel = int.Parse(file.Substring(file.Length - 5, 1));
+					StringBuilder s = new StringBuilder(file);
+					s[s.Length - 5] = (lodLevel - 1).ToString()[0];
+					if (File.Exists(s.ToString())) { Console.WriteLine(file + " has lower lod"); }
+				}
+			}
+		}
 
 		static void AverageImages(string folder, string extension = "*.png") {
 			long[] pixels = null;
