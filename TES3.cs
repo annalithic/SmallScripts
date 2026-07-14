@@ -129,33 +129,138 @@ namespace SmallScripts {
 
         };
 
+		public static void CellGraph(params string[] espPaths) {
+
+			var interiors = new Dictionary<string, int>();
+			var connections = new HashSet<string>();
+
+            var exteriors = new HashSet<int>();
+            var surfaceGroups = new HashSet<string>();
+			var usedGroups = new HashSet<string>();
+
+			foreach (string espPath in espPaths) {
+				JArray esp = JArray.Parse(File.ReadAllText(espPath));
+				for (int i = 0; i < esp.Count; i++) {
+					var form = esp[i];
+					if (form.Str("type") != "Cell") continue;
+					if (form["data"].Str("flags").IndexOf("IS_INTERIOR") == -1) {
+						exteriors.Add(i);
+					} else {
+                        string cellName = form.Str("name");
+                        interiors[cellName] = i;
+                    }
+
+                }
+
+				foreach (int i in exteriors) {
+					var exterior = esp[i];
+					foreach (JObject reference in (JArray)exterior["references"]) {
+                        if (reference["destination"] == null) continue;
+                        string destination = reference["destination"].Str("cell");
+                        if (!interiors.ContainsKey(destination)) continue;
+                        string destinationGroup = destination.Split(',', ':').FirstOrDefault();
+						surfaceGroups.Add(destinationGroup);
+                    }
+                }
+
+                foreach (string cellName in interiors.Keys) {
+
+                    var form = esp[interiors[cellName]];
+
+                    foreach (JObject reference in (JArray)form["references"]) {
+                        if (reference["destination"] == null) continue;
+                        string destination = reference["destination"].Str("cell");
+                        if (!interiors.ContainsKey(destination)) continue;
+
+                        string cellGroup = cellName.Split(',', ':').FirstOrDefault();
+                        string destinationGroup = destination.Split(',', ':').FirstOrDefault();
+
+                        if (destinationGroup == cellGroup) continue;
+
+                        if (string.Compare(cellGroup, destinationGroup) < 0) connections.Add($"\"{cellGroup}\"--\"{destinationGroup}\"");
+                        else connections.Add($"\"{destinationGroup}\"--\"{cellGroup}\"");
+
+						usedGroups.Add(cellGroup);
+						usedGroups.Add(destinationGroup);
+
+
+      //                  if (destination == cellName) continue;
+      //                  if (!interiors.ContainsKey(destination)) continue;
+
+						//if (string.Compare(cellName, destination) < 0) connections.Add($"\"{cellName}\"--\"{destination}\"");
+						//else connections.Add($"\"{destination}\"--\"{cellName}\"");
+                    }
+                }
+
+				foreach (string connection in connections) Console.WriteLine(connection);
+				Console.WriteLine();
+				foreach (string group in usedGroups) if (surfaceGroups.Contains(group)) Console.WriteLine($"\"{group}\" [style=filled,color=lightgreen]");
+			}
+
+
+		}
+
         public static void ListCellsNew(params string[] espPaths) {
 
-			var exteriors = new List<(int id, string name, bool isInterior, HashSet<string> regions)>();
-			var interiors = new Dictionary<string, (int id, string name, bool isInterior, HashSet<string> regions)>();
+			var regionNames = new Dictionary<string, string>();
+			var regionDistricts = new Dictionary<string, string>();
+			foreach(string line in File.ReadAllLines(@"E:\Extracted\Morrowind\NEW_CELL_DATA\regions.txt")) {
+				var split = line.Split('\t');
+                regionNames[split[2]] = split[4];
+				regionDistricts[split[4]] = split[0];
+			}
+
+
+			var exteriors = new List<(int id, string name, bool isInterior, HashSet<string> regions, string group, string subgroup)>();
+			var interiors = new Dictionary<string, (int id, string name, bool isInterior, HashSet<string> regions, string group, string subgroup)>();
 
             var interiorRegionsPropagated = new HashSet<string>();
             var interiorRegionsFrontier = new HashSet<string>();
 			var interiorRegionsFrontierNew = new HashSet<string>();
+			
+			var groupCounts = new Dictionary<string, int>();
+            var subgroupCounts = new Dictionary<string, int>();
+
+            //lol
+            var groupRegions = new Dictionary<string, Dictionary<string, int>>();
 
             foreach (string espPath in espPaths) {
                 JArray esp = JArray.Parse(File.ReadAllText(espPath));
+
+				//gather cells
 				for (int i = 0; i < esp.Count; i++) {
 					var form = esp[i];
                     if (form.Str("type") != "Cell") continue;
-                    (int id, string name, bool isInterior, HashSet<string> regions) cell = (i, form.Str("name"), form["data"].Str("flags").IndexOf("IS_INTERIOR") != -1, new HashSet<string>());
+                    (int id, string name, bool isInterior, HashSet<string> regions, string group, string subgroup) cell 
+						= (i, form.Str("name"), form["data"].Str("flags").IndexOf("IS_INTERIOR") != -1, new HashSet<string>(), "", "");
 					if(cell.isInterior) {
                         if (((JArray)form["references"]).Count == 0) continue;
+						string[] words = cell.name.Split(',', ':');
+
+
+
+                        cell.group = words[0];
+                        if (!groupCounts.ContainsKey(cell.group)) groupCounts[cell.group] = 1;
+                        else groupCounts[cell.group]++;
+
+                        if (words.Length > 1) {
+                            cell.subgroup = words[0] + "/" + words[1].Trim();
+                            if (!subgroupCounts.ContainsKey(cell.subgroup)) subgroupCounts[cell.subgroup] = 1;
+                            else subgroupCounts[cell.subgroup]++;
+                        }
+
+
+
                         interiors[cell.name] = cell;
 
                     } else {
-                        cell.regions.Add(form["region"] == null ? "NO_REGION" : form.Str("region"));
+                        cell.regions.Add(form["region"] == null ? "NO_REGION" : regionNames[form.Str("region")]);
                         exteriors.Add(cell);
-
 					}
 					
                 }
 
+				//ext->int connections
                 foreach (var exterior in exteriors) {
 					var form = esp[exterior.id];
 
@@ -164,14 +269,22 @@ namespace SmallScripts {
 						string destination = reference["destination"].Str("cell");
 						if (!interiors.ContainsKey(destination)) continue;
 						var interior = interiors[destination];
-						foreach(var region in exterior.regions) interior.regions.Add(region);
+
+						string region = exterior.regions.FirstOrDefault();
+						interior.regions.Add(region);
 						interiorRegionsFrontier.Add(destination);
+
+						//group region counts
+                        string group = groupCounts.ContainsKey(destination) ? destination : interior.group;
+						if (!groupRegions.ContainsKey(group)) groupRegions[group] = new Dictionary<string, int>();
+						if (!groupRegions[group].ContainsKey(region)) groupRegions[group][region] = 0;
+						groupRegions[group][region]++;
                     }
                 }
 
 				//TODO THIS IS WRONG NEED PROPER TREE SEARCH?
 				while(interiorRegionsFrontier.Count > 0) {
-					Console.WriteLine($"FRONTIER LENGTH {interiorRegionsFrontier.Count}");
+					//Console.WriteLine($"FRONTIER LENGTH {interiorRegionsFrontier.Count}");
 					foreach(var frontierCellName in interiorRegionsFrontier) {
 						var interior = interiors[frontierCellName];
                         var form = esp[interior.id];
@@ -184,7 +297,7 @@ namespace SmallScripts {
 
                             var destinationInterior = interiors[destination];
                             foreach (var region in interior.regions) destinationInterior.regions.Add(region);
-							interiorRegionsFrontierNew.Add(destination);
+                            interiorRegionsFrontierNew.Add(destination);
 							interiorRegionsPropagated.Add(frontierCellName);
                         }
                     }
@@ -193,18 +306,54 @@ namespace SmallScripts {
 				}
             }
 
-			foreach (string cell in interiors.Keys) {
-				StringBuilder s = new StringBuilder();
-				s.Append(cell); s.Append("@");
-				if (interiors[cell].regions.Count > 0) {
-                    foreach (string region in interiors[cell].regions) {
-                        s.Append(region); s.Append(", ");
+
+			//foreach (string cellName in interiors.Keys) {
+			//	StringBuilder s = new StringBuilder();
+			//	s.Append(cellName); s.Append('@');
+			//	var interior = interiors[cellName];
+			//	if (interior.regions.Count > 0) {
+			//		foreach (string region in interior.regions) {
+			//			s.Append(region); s.Append(", ");
+			//		}
+			//		s.Remove(s.Length - 2, 2);
+			//		s.Append('@');
+			//		foreach (string region in interior.regions) {
+			//			s.Append(regionDistricts[region]); s.Append(", ");
+			//		}
+   //                 s.Remove(s.Length - 2, 2);
+   //             } else s.Append('@');
+				
+                
+   //             s.Append('@'); s.Append(groupCounts[interior.group]);
+			//	s.Append('@'); s.Append(interior.group);
+			//	if(interior.subgroup != "" && subgroupCounts[interior.subgroup] > 1) {
+			//		s.Append('@'); s.Append(interior.subgroup);
+			//	}
+                
+   //             Console.WriteLine(s.ToString());
+			//}
+			//Console.WriteLine();
+
+			foreach(string group in groupCounts.Keys) {
+                StringBuilder s = new StringBuilder(group);
+				s.Append('@');
+				s.Append(groupCounts[group]);
+				s.Append("@");
+				if(groupRegions.ContainsKey(group)) {
+                    if (groupRegions[group].Count > 1) {
+                        foreach (string region in groupRegions[group].Keys) {
+                            s.Append($"({region})x{groupRegions[group][region]}, ");
+                        }
+                        s.Remove(s.Length - 2, 2);
+
+					} else {
+                        s.Append(groupRegions[group].FirstOrDefault().Key);
                     }
-                    s.Remove(s.Length - 2, 2);
+                    s.Append('@');
+                    s.Append(regionDistricts[groupRegions[group].Keys.FirstOrDefault()]);
                 }
                 Console.WriteLine(s.ToString());
-			}
-			Console.WriteLine();
+            }
         }
 
 
