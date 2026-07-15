@@ -114,24 +114,11 @@ namespace MW {
 namespace SmallScripts {
 	static class TES3 {
 
-		//the tech keeps changing!
-		static string[] lodLevelTextures = { "sml.dds", "mid.dds", "far.dds" };
-        static string[] lodLevelFolders = {
-            @"C:\Games\MorrowindMods\lodrocksmall\meshes",
-            @"C:\Games\MorrowindMods\lodrockmid\meshes",
-            @"C:\Games\MorrowindMods\lodrockfar\meshes",
-            @"C:\Games\MorrowindMods\lodtreesmall\meshes",
-            @"C:\Games\MorrowindMods\lodtreemid\meshes",
-            @"C:\Games\MorrowindMods\lodtreefar\meshes",
-            @"C:\Games\MorrowindMods\lodbuildsmall\meshes",
-            @"C:\Games\MorrowindMods\lodbuildmid\meshes",
-            @"C:\Games\MorrowindMods\lodbuildfar\meshes",
 
-        };
 
-        struct Vector2 {
-            public float x;
-            public float y;
+		struct Vector2 {
+			public float x;
+			public float y;
 
 
 			public Vector2(float x, float y) {
@@ -141,30 +128,30 @@ namespace SmallScripts {
 
 			public static Vector2 operator +(Vector2 v1, Vector2 v2) {
 				return new Vector2(v1.x + v2.x, v1.y + v2.y);
-            }
+			}
 
-            public static Vector2 operator /(Vector2 v1, int div) {
-                return new Vector2(v1.x / div, v1.y / div);
-            }
+			public static Vector2 operator /(Vector2 v1, int div) {
+				return new Vector2(v1.x / div, v1.y / div);
+			}
 
-            public override string ToString() {
+			public override string ToString() {
 				return $"({(long)x},{(long)y})";
-            }
-        }
+			}
+		}
 
-        class GroupInfo {
+		class GroupInfo {
 			public bool ignore;
 			public string ignoreReason;
 			public string gameplayType;
 			public string type;
-            public string name;
-            public string parent;
+			public string name;
+			public string parent;
 			public string regions;
 			public string district;
 
-            //not taken from premade data
-            public int cellCount;
-            public int npcCount;
+			//not taken from premade data
+			public int cellCount;
+			public int npcCount;
 			public int hostileCount;
 			public bool onlyNpcsAreEnslaved;
 
@@ -173,69 +160,69 @@ namespace SmallScripts {
 
 			public GroupInfo() {
 				onlyNpcsAreEnslaved = true;
-                doorPositions = new HashSet<Vector2>();
-            }
+				doorPositions = new HashSet<Vector2>();
+			}
 
 			Vector2 MergePosition() {
-                Vector2 average = new Vector2();
-                foreach (Vector2 pos in doorPositions) {
-                    average += pos;
-                }
-                average /= doorPositions.Count;
-                return average;
-            }
+				Vector2 average = new Vector2();
+				foreach (Vector2 pos in doorPositions) {
+					average += pos;
+				}
+				average /= doorPositions.Count;
+				return average;
+			}
 
-            public override string ToString() {
-                string ignoreText = ignore ? "Ignore" : "";
+			public override string ToString() {
+				string ignoreText = ignore ? "Ignore" : "";
 				string position = "NO POSITION";
-				if(doorPositions.Count > 0) {
+				if (doorPositions.Count > 0) {
 					position = (MergePosition() / 8192).ToString();
 				}
-                return $"{ignoreText}@{ignoreReason}@{gameplayType}@{type}@{name}@{cellCount}@{regions}@{district}@{parent}@{npcCount}@{hostileCount}@{position}";
-            }
+				return $"{ignoreText}@{ignoreReason}@{gameplayType}@{type}@{name}@{cellCount}@{regions}@{district}@{parent}@{npcCount}@{hostileCount}@{position}";
+			}
 
 			public string MapPopulationCircle() {
-                int cellSize = 64;
-                int xAdd = 42 * 8192;
-                int yAdd = 38 * 8192;
+				int cellSize = 64;
+				int xAdd = 42 * 8192;
+				int yAdd = 38 * 8192;
 
 				var position = MergePosition();
 
-                float xMap = (position.x + xAdd) * cellSize / 8192;
-                float yMap = (yAdd - position.y) * cellSize / 8192;
+				float xMap = (position.x + xAdd) * cellSize / 8192;
+				float yMap = (yAdd - position.y) * cellSize / 8192;
 
 
 				float sizeGrowthMult = 3.2f;
 				int size = 10 - (int)sizeGrowthMult + (int)(Math.Sqrt(npcCount) * sizeGrowthMult);
 
-                float textGrowthMult = 1;
-                int textSize = 8 - (int)textGrowthMult + (int)(Math.Sqrt(npcCount) * textGrowthMult);
+				float textGrowthMult = 1;
+				int textSize = 8 - (int)textGrowthMult + (int)(Math.Sqrt(npcCount) * textGrowthMult);
 
-                string count = npcCount.ToString();
+				string count = npcCount.ToString();
 				string shape = "circle";
 				string sizeString = $"width:{size}px;height:{size}px;";
 
-                if (npcCount <= 5) {
+				if (npcCount <= 5) {
 					count = "";
 					shape = "diamond";
 					sizeString = "";
 				}
 				string titleText = hostileCount > 0 ? $"{name}: {npcCount} + {hostileCount} Hostiles" : $"{name}: {npcCount}";
 
-                return $"<div class=\"{shape} {gameplayType}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};{sizeString}font-size:{textSize}pt\" title=\"{titleText}\">{count}</div>";
-            }
-        }
+				return $"<div class=\"{shape} {gameplayType}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};{sizeString}font-size:{textSize}pt\" title=\"{titleText}\">{count}</div>";
+			}
+		}
 
 		static string GetCellGroup(string s, Dictionary<string, GroupInfo> groupInfo = null) {
-            string g = s.Split(',', ':').FirstOrDefault();
+			string g = s.Split(',', ':').FirstOrDefault();
 			if (groupInfo != null) {
 				if (!groupInfo.ContainsKey(g)) Console.WriteLine($"GROUP MISSING: {g}");
-				else while (groupInfo.ContainsKey(g) && groupInfo[g].parent != "") { 
-					g = groupInfo[g].parent;
-				} 
+				else while (groupInfo.ContainsKey(g) && groupInfo[g].parent != "") {
+						g = groupInfo[g].parent;
+					}
 			}
 			return g;
-        }
+		}
 
 		public static void PopulationNew(params string[] espPaths) {
 
@@ -282,74 +269,74 @@ namespace SmallScripts {
 						if (form.Str("class") == "Slave") slaveIds.Add(npcId);
 
 						if (form["ai_data"].Int("fight") > 70) {
-                            npcsHostile.Add(npcId);
-                        } else {
-                            npcs.Add(npcId);
-                        }
-                    }
-				
-                }
+							npcsHostile.Add(npcId);
+						} else {
+							npcs.Add(npcId);
+						}
+					}
 
-                foreach (string cellName in interiors.Keys) {
-                    var cell = esp[interiors[cellName]];
+				}
+
+				foreach (string cellName in interiors.Keys) {
+					var cell = esp[interiors[cellName]];
 					if (((JArray)cell["references"]).Count == 0) continue;
 
 
-                    string group = GetCellGroup(cellName, groupInfo);
+					string group = GetCellGroup(cellName, groupInfo);
 					var info = groupInfo[group];
 					info.cellCount++;
 
 					foreach (JObject reference in (JArray)cell["references"]) {
 						string refId = reference.Str("id");
 						if (npcs.Contains(refId)) {
-                            info.npcCount++;
+							info.npcCount++;
 							if (!slaveIds.Contains(refId)) info.onlyNpcsAreEnslaved = false;
 
-                        } else if (npcsHostile.Contains(refId)) info.hostileCount++;
-                    }
-                }
+						} else if (npcsHostile.Contains(refId)) info.hostileCount++;
+					}
+				}
 
 				//foreach (string group in groupInfo.Keys) {
 				//	Console.WriteLine(groupInfo[group]);
 				//}
 
-				foreach(int i in exteriors) {
+				foreach (int i in exteriors) {
 					var cell = esp[i];
-                    foreach (JObject reference in (JArray)cell["references"]) {
-                        string refId = reference.Str("id");
-                        if (reference["destination"] == null) continue;
+					foreach (JObject reference in (JArray)cell["references"]) {
+						string refId = reference.Str("id");
+						if (reference["destination"] == null) continue;
 						string destination = reference["destination"].Str("cell");
-                        if (!interiors.ContainsKey(destination)) continue;
-                        string destinationGroup = GetCellGroup(destination);
+						if (!interiors.ContainsKey(destination)) continue;
+						string destinationGroup = GetCellGroup(destination);
 
-                        JArray coords = (JArray)reference["translation"];
-                        float x = coords[0].Value<float>(); //if (x < minX || x > maxX) continue;
-                        float y = coords[1].Value<float>(); //if (y < minY || y > maxY) continue;
-                        groupInfo[destinationGroup].doorPositions.Add(new Vector2() { x = x, y = y});
-                    }
-                }
+						JArray coords = (JArray)reference["translation"];
+						float x = coords[0].Value<float>(); //if (x < minX || x > maxX) continue;
+						float y = coords[1].Value<float>(); //if (y < minY || y > maxY) continue;
+						groupInfo[destinationGroup].doorPositions.Add(new Vector2() { x = x, y = y });
+					}
+				}
 
 				foreach (string group in groupInfo.Keys) {
 					//Console.WriteLine(groupInfo[group]);
-					
+
 					var info = groupInfo[group];
 					if (info.ignore || info.doorPositions.Count == 0 || info.parent != "" || info.npcCount <= 0 || info.onlyNpcsAreEnslaved) continue;
-                    Console.WriteLine(groupInfo[group].MapPopulationCircle());
-                    
+					Console.WriteLine(groupInfo[group].MapPopulationCircle());
+
 				}
 
 			}
 
 
-        }
+		}
 
 		public static void CellGraph(params string[] espPaths) {
 
 			var interiors = new Dictionary<string, int>();
 			var connections = new HashSet<string>();
 
-            var exteriors = new HashSet<int>();
-            var surfaceGroups = new HashSet<string>();
+			var exteriors = new HashSet<int>();
+			var surfaceGroups = new HashSet<string>();
 			var usedGroups = new HashSet<string>();
 
 			foreach (string espPath in espPaths) {
@@ -360,51 +347,51 @@ namespace SmallScripts {
 					if (form["data"].Str("flags").IndexOf("IS_INTERIOR") == -1) {
 						exteriors.Add(i);
 					} else {
-                        string cellName = form.Str("name");
-                        interiors[cellName] = i;
-                    }
+						string cellName = form.Str("name");
+						interiors[cellName] = i;
+					}
 
-                }
+				}
 
 				foreach (int i in exteriors) {
 					var exterior = esp[i];
 					foreach (JObject reference in (JArray)exterior["references"]) {
-                        if (reference["destination"] == null) continue;
-                        string destination = reference["destination"].Str("cell");
-                        if (!interiors.ContainsKey(destination)) continue;
-                        string destinationGroup = destination.Split(',', ':').FirstOrDefault();
+						if (reference["destination"] == null) continue;
+						string destination = reference["destination"].Str("cell");
+						if (!interiors.ContainsKey(destination)) continue;
+						string destinationGroup = destination.Split(',', ':').FirstOrDefault();
 						surfaceGroups.Add(destinationGroup);
-                    }
-                }
+					}
+				}
 
-                foreach (string cellName in interiors.Keys) {
+				foreach (string cellName in interiors.Keys) {
 
-                    var form = esp[interiors[cellName]];
+					var form = esp[interiors[cellName]];
 
-                    foreach (JObject reference in (JArray)form["references"]) {
-                        if (reference["destination"] == null) continue;
-                        string destination = reference["destination"].Str("cell");
-                        if (!interiors.ContainsKey(destination)) continue;
+					foreach (JObject reference in (JArray)form["references"]) {
+						if (reference["destination"] == null) continue;
+						string destination = reference["destination"].Str("cell");
+						if (!interiors.ContainsKey(destination)) continue;
 
-                        string cellGroup = cellName.Split(',', ':').FirstOrDefault();
-                        string destinationGroup = destination.Split(',', ':').FirstOrDefault();
+						string cellGroup = cellName.Split(',', ':').FirstOrDefault();
+						string destinationGroup = destination.Split(',', ':').FirstOrDefault();
 
-                        if (destinationGroup == cellGroup) continue;
+						if (destinationGroup == cellGroup) continue;
 
-                        if (string.Compare(cellGroup, destinationGroup) < 0) connections.Add($"\"{cellGroup}\"--\"{destinationGroup}\"");
-                        else connections.Add($"\"{destinationGroup}\"--\"{cellGroup}\"");
+						if (string.Compare(cellGroup, destinationGroup) < 0) connections.Add($"\"{cellGroup}\"--\"{destinationGroup}\"");
+						else connections.Add($"\"{destinationGroup}\"--\"{cellGroup}\"");
 
 						usedGroups.Add(cellGroup);
 						usedGroups.Add(destinationGroup);
 
 
-      //                  if (destination == cellName) continue;
-      //                  if (!interiors.ContainsKey(destination)) continue;
+						//                  if (destination == cellName) continue;
+						//                  if (!interiors.ContainsKey(destination)) continue;
 
 						//if (string.Compare(cellName, destination) < 0) connections.Add($"\"{cellName}\"--\"{destination}\"");
 						//else connections.Add($"\"{destination}\"--\"{cellName}\"");
-                    }
-                }
+					}
+				}
 
 				foreach (string connection in connections) Console.WriteLine(connection);
 				Console.WriteLine();
@@ -414,13 +401,13 @@ namespace SmallScripts {
 
 		}
 
-        public static void ListCellsNew(params string[] espPaths) {
+		public static void ListCellsNew(params string[] espPaths) {
 
 			var regionNames = new Dictionary<string, string>();
 			var regionDistricts = new Dictionary<string, string>();
-			foreach(string line in File.ReadAllLines(@"E:\Extracted\Morrowind\NEW_CELL_DATA\regions.txt")) {
+			foreach (string line in File.ReadAllLines(@"E:\Extracted\Morrowind\NEW_CELL_DATA\regions.txt")) {
 				var split = line.Split('\t');
-                regionNames[split[2]] = split[4];
+				regionNames[split[2]] = split[4];
 				regionDistricts[split[4]] = split[0];
 			}
 
@@ -428,57 +415,57 @@ namespace SmallScripts {
 			var exteriors = new List<(int id, string name, bool isInterior, HashSet<string> regions, string group, string subgroup)>();
 			var interiors = new Dictionary<string, (int id, string name, bool isInterior, HashSet<string> regions, string group, string subgroup)>();
 
-            var interiorRegionsPropagated = new HashSet<string>();
-            var interiorRegionsFrontier = new HashSet<string>();
+			var interiorRegionsPropagated = new HashSet<string>();
+			var interiorRegionsFrontier = new HashSet<string>();
 			var interiorRegionsFrontierNew = new HashSet<string>();
-			
+
 			var groupCounts = new Dictionary<string, int>();
-            var subgroupCounts = new Dictionary<string, int>();
+			var subgroupCounts = new Dictionary<string, int>();
 
-            //lol
-            var groupRegions = new Dictionary<string, Dictionary<string, int>>();
+			//lol
+			var groupRegions = new Dictionary<string, Dictionary<string, int>>();
 
-            foreach (string espPath in espPaths) {
-                JArray esp = JArray.Parse(File.ReadAllText(espPath));
+			foreach (string espPath in espPaths) {
+				JArray esp = JArray.Parse(File.ReadAllText(espPath));
 
 				//gather cells
 				for (int i = 0; i < esp.Count; i++) {
 					var form = esp[i];
-                    if (form.Str("type") != "Cell") continue;
-                    (int id, string name, bool isInterior, HashSet<string> regions, string group, string subgroup) cell 
+					if (form.Str("type") != "Cell") continue;
+					(int id, string name, bool isInterior, HashSet<string> regions, string group, string subgroup) cell
 						= (i, form.Str("name"), form["data"].Str("flags").IndexOf("IS_INTERIOR") != -1, new HashSet<string>(), "", "");
-					if(cell.isInterior) {
-                        if (((JArray)form["references"]).Count == 0) continue;
+					if (cell.isInterior) {
+						if (((JArray)form["references"]).Count == 0) continue;
 						string[] words = cell.name.Split(',', ':');
 
 
 
-                        cell.group = words[0];
-                        if (!groupCounts.ContainsKey(cell.group)) groupCounts[cell.group] = 1;
-                        else groupCounts[cell.group]++;
+						cell.group = words[0];
+						if (!groupCounts.ContainsKey(cell.group)) groupCounts[cell.group] = 1;
+						else groupCounts[cell.group]++;
 
-                        if (words.Length > 1) {
-                            cell.subgroup = words[0] + "/" + words[1].Trim();
-                            if (!subgroupCounts.ContainsKey(cell.subgroup)) subgroupCounts[cell.subgroup] = 1;
-                            else subgroupCounts[cell.subgroup]++;
-                        }
+						if (words.Length > 1) {
+							cell.subgroup = words[0] + "/" + words[1].Trim();
+							if (!subgroupCounts.ContainsKey(cell.subgroup)) subgroupCounts[cell.subgroup] = 1;
+							else subgroupCounts[cell.subgroup]++;
+						}
 
 
 
-                        interiors[cell.name] = cell;
+						interiors[cell.name] = cell;
 
-                    } else {
-                        cell.regions.Add(form["region"] == null ? "NO_REGION" : regionNames[form.Str("region")]);
-                        exteriors.Add(cell);
+					} else {
+						cell.regions.Add(form["region"] == null ? "NO_REGION" : regionNames[form.Str("region")]);
+						exteriors.Add(cell);
 					}
-					
-                }
+
+				}
 
 				//ext->int connections
-                foreach (var exterior in exteriors) {
+				foreach (var exterior in exteriors) {
 					var form = esp[exterior.id];
 
-                    foreach(JObject reference in (JArray)form["references"]) {
+					foreach (JObject reference in (JArray)form["references"]) {
 						if (reference["destination"] == null) continue;
 						string destination = reference["destination"].Str("cell");
 						if (!interiors.ContainsKey(destination)) continue;
@@ -489,36 +476,36 @@ namespace SmallScripts {
 						interiorRegionsFrontier.Add(destination);
 
 						//group region counts
-                        string group = groupCounts.ContainsKey(destination) ? destination : interior.group;
+						string group = groupCounts.ContainsKey(destination) ? destination : interior.group;
 						if (!groupRegions.ContainsKey(group)) groupRegions[group] = new Dictionary<string, int>();
 						if (!groupRegions[group].ContainsKey(region)) groupRegions[group][region] = 0;
 						groupRegions[group][region]++;
-                    }
-                }
+					}
+				}
 
 				//TODO THIS IS WRONG NEED PROPER TREE SEARCH?
-				while(interiorRegionsFrontier.Count > 0) {
+				while (interiorRegionsFrontier.Count > 0) {
 					//Console.WriteLine($"FRONTIER LENGTH {interiorRegionsFrontier.Count}");
-					foreach(var frontierCellName in interiorRegionsFrontier) {
+					foreach (var frontierCellName in interiorRegionsFrontier) {
 						var interior = interiors[frontierCellName];
-                        var form = esp[interior.id];
-                        foreach (JObject reference in (JArray)form["references"]) {
-                            if (reference["destination"] == null) continue;
-                            string destination = reference["destination"].Str("cell");
+						var form = esp[interior.id];
+						foreach (JObject reference in (JArray)form["references"]) {
+							if (reference["destination"] == null) continue;
+							string destination = reference["destination"].Str("cell");
 
-                            if (!interiors.ContainsKey(destination)) continue;
-                            if (interiorRegionsPropagated.Contains(destination)) continue;
+							if (!interiors.ContainsKey(destination)) continue;
+							if (interiorRegionsPropagated.Contains(destination)) continue;
 
-                            var destinationInterior = interiors[destination];
-                            foreach (var region in interior.regions) destinationInterior.regions.Add(region);
-                            interiorRegionsFrontierNew.Add(destination);
+							var destinationInterior = interiors[destination];
+							foreach (var region in interior.regions) destinationInterior.regions.Add(region);
+							interiorRegionsFrontierNew.Add(destination);
 							interiorRegionsPropagated.Add(frontierCellName);
-                        }
-                    }
+						}
+					}
 					interiorRegionsFrontier = new HashSet<string>(interiorRegionsFrontierNew);
 					interiorRegionsFrontierNew.Clear();
 				}
-            }
+			}
 
 
 			//foreach (string cellName in interiors.Keys) {
@@ -534,44 +521,44 @@ namespace SmallScripts {
 			//		foreach (string region in interior.regions) {
 			//			s.Append(regionDistricts[region]); s.Append(", ");
 			//		}
-   //                 s.Remove(s.Length - 2, 2);
-   //             } else s.Append('@');
-				
-                
-   //             s.Append('@'); s.Append(groupCounts[interior.group]);
+			//                 s.Remove(s.Length - 2, 2);
+			//             } else s.Append('@');
+
+
+			//             s.Append('@'); s.Append(groupCounts[interior.group]);
 			//	s.Append('@'); s.Append(interior.group);
 			//	if(interior.subgroup != "" && subgroupCounts[interior.subgroup] > 1) {
 			//		s.Append('@'); s.Append(interior.subgroup);
 			//	}
-                
-   //             Console.WriteLine(s.ToString());
+
+			//             Console.WriteLine(s.ToString());
 			//}
 			//Console.WriteLine();
 
-			foreach(string group in groupCounts.Keys) {
-                StringBuilder s = new StringBuilder(group);
+			foreach (string group in groupCounts.Keys) {
+				StringBuilder s = new StringBuilder(group);
 				s.Append('@');
 				s.Append(groupCounts[group]);
 				s.Append("@");
-				if(groupRegions.ContainsKey(group)) {
-                    if (groupRegions[group].Count > 1) {
-                        foreach (string region in groupRegions[group].Keys) {
-                            s.Append($"({region})x{groupRegions[group][region]}, ");
-                        }
-                        s.Remove(s.Length - 2, 2);
+				if (groupRegions.ContainsKey(group)) {
+					if (groupRegions[group].Count > 1) {
+						foreach (string region in groupRegions[group].Keys) {
+							s.Append($"({region})x{groupRegions[group][region]}, ");
+						}
+						s.Remove(s.Length - 2, 2);
 
 					} else {
-                        s.Append(groupRegions[group].FirstOrDefault().Key);
-                    }
-                    s.Append('@');
-                    s.Append(regionDistricts[groupRegions[group].Keys.FirstOrDefault()]);
-                }
-                Console.WriteLine(s.ToString());
-            }
-        }
+						s.Append(groupRegions[group].FirstOrDefault().Key);
+					}
+					s.Append('@');
+					s.Append(regionDistricts[groupRegions[group].Keys.FirstOrDefault()]);
+				}
+				Console.WriteLine(s.ToString());
+			}
+		}
 
 
-        public static void UESPQuestRead(string file = @"C:\Users\a\Downloads\UESPWiki-20260312044642.xml") {
+		public static void UESPQuestRead(string file = @"C:\Users\a\Downloads\UESPWiki-20260312044642.xml") {
 			System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
 			doc.LoadXml(File.ReadAllText(file));
 			foreach (System.Xml.XmlNode page in doc.DocumentElement.ChildNodes) {
@@ -586,575 +573,46 @@ namespace SmallScripts {
 				string text = page["revision"]["text"].InnerText;
 				if (text.StartsWith("#REDIRECT")) continue;
 
-                string[] lines = text.Split('\n');
+				string[] lines = text.Split('\n');
 				foreach (string line in lines) {
-					if(line.StartsWith("|Loc="))  location = line.Substring(5);
-					else if(line.StartsWith("|ID=")) id = line.Substring(4);
-                    else if (line.StartsWith("|Giver=")) giver = line.Substring(7);
-                    else if (line.StartsWith("|type=")) type = line.Substring(6);
-                    else if (line.StartsWith("|description=")) desc = line.Substring(13);
-                }
+					if (line.StartsWith("|Loc=")) location = line.Substring(5);
+					else if (line.StartsWith("|ID=")) id = line.Substring(4);
+					else if (line.StartsWith("|Giver=")) giver = line.Substring(7);
+					else if (line.StartsWith("|type=")) type = line.Substring(6);
+					else if (line.StartsWith("|description=")) desc = line.Substring(13);
+				}
 				Console.WriteLine($"{pageName}@{type}@{id}@{giver}@{location}@{desc}");
 			}
 		}
 
-		public static void CreateBlankDistMeshes(string folder, string outfolder, string emptyMeshPath = @"E:\Extracted\Morrowind\empty.nif") {
-			foreach (string path in Directory.EnumerateFiles(folder, "*.nif", SearchOption.AllDirectories)) {
-				string pathRelative = Path.Combine(outfolder, path.Substring(folder.Length + 1));
-				pathRelative = pathRelative.Substring(0, pathRelative.Length - 4) + "_dist.nif";
-				if(!Directory.Exists(Path.GetDirectoryName(pathRelative))) Directory.CreateDirectory(Path.GetDirectoryName(pathRelative));
-				//if(!File.Exists(pathRelative))
-				File.Copy(emptyMeshPath, pathRelative, true);
-			}
-		}
-
-        public static void MeshTextures(string set) {
-
-			HashSet<string> meshes = new HashSet<string>();
-			Dictionary<string, int> texCounts = new Dictionary<string, int>();
-            Dictionary<string, List<string>> texMeshes = new Dictionary<string, List<string>>();
 
 
-            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\lodmeshes3.txt")) {
-                string[] split = line.Split('\t');
-                if (split.Length < 8) {
-                    continue;
-                }
-
-                if (split[10] != "mw") {
-                    continue; //temp
-                }
-
-                if(split[11] != set) continue;
-
-				meshes.Add(split[1]);
-            }
-
-			//foreach (string mesh in meshes) Console.WriteLine(mesh);
-
-			foreach (string line in File.ReadAllLines(@"E:\Anna\Anna\Visual Studio\PythonScripts\texnames.txt")) {
-                string[] split = line.Split('|');
-				if (meshes.Contains(split[0])) {
-                    for (int i = 1; i < split.Length; i++) {
-						string tex = split[i];
-						if (tex.Length == 0) continue;
-						int slash = tex.LastIndexOf('\\'); if(slash != -1) tex = tex.Substring(slash + 1);
-						tex = tex.ToLower();
-						tex = tex.Substring(0, tex.Length - 4);
-						if (!texCounts.ContainsKey(tex)) {
-							texCounts[tex] = 0;
-							texMeshes[tex] = new List<string>();
-						} 
-						texCounts[tex]++;
-						texMeshes[tex].Add(split[0]);
-                    }
-                }
-            }
-
-			foreach(string tex in texCounts.Keys) {
-				Console.Write($"{tex};{texCounts[tex]}");
-				for (int i = 0; i < texMeshes[tex].Count; i++) Console.Write(";" + texMeshes[tex][i]);
-				Console.WriteLine();
-			}
-
-        }
-
-        public static void LodMeshes3() {
-
-			
-
-			Dictionary<string, int> meshLodLevels = new Dictionary<string, int>();
-
-            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\lodmeshes4.txt")) {
-                string[] split = line.Split('\t');
-				if (split.Length < 6) {
-					continue;
-				}
-
-				//if (split[10] != "mw") {
-					//Console.WriteLine(split[10]);
-					//continue; //temp
-				//}
-
-				int folderOffset = -1;
-
-				string type = split[4];
-                if (type == "rock") folderOffset = 0;
-                else if (type == "tree") folderOffset = 3;
-                else if (type == "build") folderOffset = 6;
-                if (folderOffset == -1) continue;
 
 
-                string mesh = split[2];
-
-				string levelStr = split[5];
-				int level = folderOffset; if (levelStr == "mid") level += 1; else if (levelStr == "far") level += 2;
-
-				if(!meshLodLevels.ContainsKey(mesh) || level > meshLodLevels[mesh]) meshLodLevels[mesh] = level;
-            }
-
-			Console.WriteLine("PARSED");
-
-			foreach(string mesh in meshLodLevels.Keys) {
-				bool convert = true;
-				int lodLevel = meshLodLevels[mesh];
-
-                string destSuffix = mesh.Substring(0, mesh.Length - 4) + "_dist.nif";
-				for(int i = 0; i < lodLevelFolders.Length; i++) {
-					string path = Path.Combine(lodLevelFolders[i], destSuffix);
-                    if (File.Exists(path)) {
-						if(i == lodLevel) {
-							convert = false;
-						} else {
-							Console.WriteLine("DELETING FILE " + mesh);
-							File.Delete(path);
-						}
-					}
-				}
-				if (!convert) continue;
-
-                string dest = Path.Combine(lodLevelFolders[lodLevel], destSuffix);
-
-                string file = Path.Combine(@"C:\Games\MorrowindMods\Morrowind Optimization Patch\00 Core\meshes", mesh);
-                if (!File.Exists(file)) file = Path.Combine(@"C:\Games\MorrowindMods\TD_Addon\00 Data Files\meshes", mesh);
-                if (!File.Exists(file)) file = Path.Combine(@"C:\Games\MorrowindMods\Tamriel Data\meshes", mesh);
-                if (!File.Exists(file)) file = Path.Combine(@"E:\Extracted\Morrowind\VANILLA\meshes", mesh);
-                if (!File.Exists(file)) {
-                    Console.WriteLine("MISSING FILE    " + mesh);
-                    continue;
-                }
-                //if (!File.Exists(dest)) {
-                Console.WriteLine(dest);
-                if (!Directory.Exists(Path.GetDirectoryName(dest))) Directory.CreateDirectory(Path.GetDirectoryName(dest));
-                //File.Copy(file, dest);
-                Process process = new Process();
-                process.StartInfo.FileName = @"E:\Programs\Python 3.12\python.exe";
-                process.StartInfo.Arguments = $@" ""E:\Projects\PythonScripts\texreplace.py"" ""{file}"" ""{dest}"" ""{lodLevelTextures[lodLevel % 3]}""";
-                process.StartInfo.CreateNoWindow = true;
-				process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                process.Start();
-                process.WaitForExit();// Waits here for the process to exit.
-
-                //}
-
-            }
-        }
-
-        public static void LodMeshes2() {
-
-            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\lodmeshes2.txt")) {
-				string[] split = line.Split('\t'); 
-				if (split.Length < 5) {
-					continue;
-				}
-				if (split[3] != "rock" || !(split[4] == "far" || split[4] == "mid")) continue;
-
-				string mesh = split[1];
-
-                string file = Path.Combine(@"C:\Games\MorrowindMods\Morrowind Optimization Patch\00 Core\meshes", mesh);
-                if (!File.Exists(file)) file = Path.Combine(@"C:\Games\MorrowindMods\TD_Addon\01 TR BSA\meshes", mesh);
-                if (!File.Exists(file)) file = Path.Combine(@"E:\Extracted\Morrowind\TR\meshes", mesh);
-                if (!File.Exists(file)) file = Path.Combine(@"E:\Extracted\Morrowind\VANILLA\meshes", mesh);
-                if (!File.Exists(file)) {
-                    Console.WriteLine("MISSING FILE    " + mesh);
-                    continue;
-                }
-                string dest = Path.Combine(@"C:\Games\MorrowindMods\lodtest\meshes", mesh.Substring(0, mesh.Length - 4) + "_dist.nif");
-                if (!File.Exists(dest)) {
-                    Console.WriteLine(dest);
-                    if (!Directory.Exists(Path.GetDirectoryName(dest))) Directory.CreateDirectory(Path.GetDirectoryName(dest));
-                    File.Copy(file, dest);
-                }
-
-            }
-        }
-
-
-        public static void LodMeshes() {
-			HashSet<string> lines = new HashSet<string>();
-			foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\lodmeshes.txt")) {
-				if(line.Length > 0) lines.Add(line);
-			}
-
-            foreach (string line in lines) {
-                string file = Path.Combine(@"E:\Games\MorrowindMods\Morrowind Optimization Patch\00 Core\meshes", line);
-                if (!File.Exists(file)) file = Path.Combine(@"E:\Games\MorrowindMods\TD_Addon\01 TR BSA\meshes", line);
-				if (!File.Exists(file)) file = Path.Combine(@"E:\Extracted\Morrowind\TR\meshes", line);
-                if (!File.Exists(file)) file = Path.Combine(@"E:\Extracted\Morrowind\VANILLA\meshes", line);
-				if (!File.Exists(file)) {
-					Console.WriteLine("MISSING FILE    " + line);
-					continue;
-				}
-				string dest = Path.Combine(@"E:\Games\MorrowindMods\lodtest\meshes", line.Substring(0, line.Length - 4) + "_dist.nif");
-				if(!File.Exists(dest)) {
-					Console.WriteLine(dest);
-					if (!Directory.Exists(Path.GetDirectoryName(dest))) Directory.CreateDirectory(Path.GetDirectoryName(dest));
-                    File.Copy(file, dest);
-                }
-
-            }
-		}
-		
-		class ModelStats {
-			public string model;
-			public string sharedModel;
-			public string type;
-			public string dist;
-			public string category;
-			public string comment;
-            public bool tr;
-
-			public int tris;
-			public int trisDist;
-
-			public int count;
-			public int countTR;
-
-            public Dictionary<string, int> formCounts;
-            public Dictionary<string, int> formCountsTR;
-        }
-
-        public static void TES3StaticList3(params string[] espPaths) {
-			
-
-
-            HashSet<string> staticFormTypes = new HashSet<string> { "Static", "Activator", "Container", "Door", };
-
-			var models = new Dictionary<string, ModelStats>();
-
-            foreach (string line in File.ReadAllLines(@"E:\Extracted\Morrowind\mwmesh.txt")) {
-				var words = line.Split('\t');
-				ModelStats stats = new ModelStats();
-				stats.model = words[2].Replace('\\','/');
-				stats.sharedModel = words[0];
-				stats.type = words[4];
-				stats.dist = words[5];
-				stats.category = words[6];
-				stats.comment = words[18];
-				models[stats.model] = stats;
-            }
-
-            foreach (string line in File.ReadAllLines(@"E:\Projects\PythonScripts\meshstats3.txt")) {
-                string[] words = line.Split('|');
-                string modelPath = words[0].ToLower();
-				string model = modelPath.Substring(modelPath.IndexOf("\\meshes\\") + "\\meshes\\".Length).Replace('\\', '/');
-				model = model.Replace("_dist.nif", ".nif");
-				bool dist = modelPath.Contains("morrowindmods\\lod");
-
-				if(!models.ContainsKey(model)) models[model] = new ModelStats() { model = model };
-                var stats = models[model];
-				if (dist)
-					stats.trisDist = int.Parse(words[1]);
-				else {
-                    stats.tris = int.Parse(words[1]);
-					stats.trisDist = stats.tris;
-					stats.tr = !modelPath.Contains("morrowind\\vanilla");
-                }
-            }
-
-
-			Dictionary<string, string> idModels = new Dictionary<string, string>();
-			Console.WriteLine("STATS....");
-			foreach (string espPath in espPaths) {
-				Console.WriteLine(espPath);
-				JArray esp = JArray.Parse(File.ReadAllText(espPath));
-				for (int i = 0; i < esp.Count; i++) {
-					var entry = esp[i];
-					if (entry["type"] != null && staticFormTypes.Contains(entry.Str("type")) && entry["id"] != null && entry["mesh"] != null) {
-						string id = entry.Str("id");
-						string mesh = entry.Str("mesh").ToLower().Replace("\\", "/");
-						if(!models.ContainsKey(mesh)) {
-							Console.WriteLine($"missing mesh stats for {mesh}");
-							continue;
-						}
-						var modelStats = models[mesh];
-						if (modelStats.formCounts == null) {
-							modelStats.formCounts = new Dictionary<string, int>();
-							modelStats.formCountsTR = new Dictionary<string, int>();
-						}
-						modelStats.formCounts[id] = 0;
-						modelStats.formCountsTR[id] = 0;
-						idModels[id] = mesh;
-					}
-				}
-			}
-
-			Console.WriteLine("REFS....");
-			for (int espIdx = 0; espIdx < espPaths.Length; espIdx++) {
-				string espPath = espPaths[espIdx];
-				Console.WriteLine(espPath);
-
-				string espFilename = Path.GetFileName(espPath);
-				bool isVanilla = espFilename == "Morrowind.json" || espFilename == "Tribunal.json" || espFilename == "Bloodmoon.json";
-
-                JArray esp = JArray.Parse(File.ReadAllText(espPath));
-				for (int i = 0; i < esp.Count; i++) {
-					if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell") {
-						if (esp[i]["data"]["flags"].Value<string>().IndexOf("IS_INTERIOR") != -1) continue; //interior
-						JArray refs = (JArray)esp[i]["references"];
-						for (int refNum = 0; refNum < refs.Count; refNum++) {
-							string id = refs[refNum]["id"].Value<string>();
-							if (!idModels.ContainsKey(id)) continue;
-							var modelStats = models[idModels[id]];
-							if (isVanilla) modelStats.formCounts[id]++;
-							else modelStats.formCountsTR[id]++;
-						}
-					}
-				}
-			}
-
-			Console.WriteLine("\r\n\r\n");
-
-			foreach (var stats in models.Values) {
-				if(stats.formCounts == null) continue;
-
-				int meshCount = 0;
-				int trMeshCount = 0;
-
-				string modalForm = "";
-				int modalCount = -1;
-				foreach(string id in stats.formCounts.Keys) {
-					int count = stats.formCounts[id];
-					int trCount = stats.formCountsTR[id];
-					if(count + trCount > modalCount) {
-						modalCount = count + trCount;
-						modalForm = id;
-					}
-					meshCount += count;
-					trMeshCount += trCount;
-				}
-
-				if (meshCount == 0 && trMeshCount == 0) continue;
-
-				string tr = stats.tr ? "tr" : "mw";
-
-
-                Console.WriteLine($"{stats.sharedModel}|{modalForm}|{stats.model}|{tr}|{stats.category}|{stats.type}|{stats.dist}|{meshCount}|{trMeshCount}|{stats.tris}|{stats.trisDist}|{stats.comment}");
-			}
-		}
 
 
 		public static void ListRegions(params string[] espPaths) {
 			Dictionary<string, string> regions = new Dictionary<string, string>();
 
-            foreach (string espPath in espPaths) {
-                Console.WriteLine(espPath);
-                JArray esp = JArray.Parse(File.ReadAllText(espPath));
-                for (int i = 0; i < esp.Count; i++) {
-                    var entry = esp[i];
-                    if (entry["type"] != null && entry.Str("type") == "Region") {
-						regions[entry.Str("id")] = entry.Str("name");
-                    }
-                }
-            }
-
-			foreach(string region in regions.Keys) {
-				Console.WriteLine($"{region}@{regions[region]}");
-			}
-        }
-
-		public static void TES3StaticList2(params string[] espPaths) {
-            HashSet<string> staticFormTypes = new HashSet<string> { "Static", "Activator", "Container", "Door", };
-
-            Dictionary<string, string> meshLodData = new Dictionary<string, string>();
-            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\lodmeshes4.txt")) {
-				int idx = line.IndexOf('\t');
-                string mesh = line.Substring(0, idx);
-				string data = line.Substring(idx + 1);
-				if (data.Length > 0) meshLodData[mesh] = data.Replace('\t', '|');
-            }
-
-
-            Dictionary<string, int> meshTris = new Dictionary<string, int>();
-            Dictionary<string, int> meshSizes = new Dictionary<string, int>();
-
-            foreach (string line in File.ReadAllLines(@"E:\A\A\Visual Studio\PythonScripts\meshstats2.txt")) {
-                string[] words = line.Split('|');
-                string mesh = words[0].ToLower();
-                meshTris[mesh] = int.Parse(words[1]);
-                meshSizes[mesh] = (int)Math.Sqrt(double.Parse(words[3]));
-            }
-
-            Dictionary<string, List<string>> meshForms = new Dictionary<string, List<string>>();
-            Dictionary<string, int> formCounts = new Dictionary<string, int>();
-            Dictionary<string, int> formCountsTR = new Dictionary<string, int>();
-
-
-            Console.WriteLine("STATS....");
-            foreach (string espPath in espPaths) {
-                Console.WriteLine(espPath);
-                JArray esp = JArray.Parse(File.ReadAllText(espPath));
-                for (int i = 0; i < esp.Count; i++) {
-                    var entry = esp[i];
-                    if (entry["type"] != null && staticFormTypes.Contains(entry.Str("type")) && entry["id"] != null && entry["mesh"] != null) {
-                        string id = entry.Str("id");
-                        string mesh = entry.Str("mesh").ToLower();
-                        if (!meshForms.ContainsKey(mesh)) meshForms[mesh] = new List<string>();
-                        meshForms[mesh].Add(id);
-                        formCounts[id] = 0;
-                        formCountsTR[id] = 0;
-                    }
-                }
-            }
-
-            Console.WriteLine("REFS....");
-			for (int espIdx = 0; espIdx < espPaths.Length; espIdx++) {
-				string espPath = espPaths[espIdx];
-                Console.WriteLine(espPath);
-                JArray esp = JArray.Parse(File.ReadAllText(espPath));
-                for (int i = 0; i < esp.Count; i++) {
-                    if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell") {
-                        if ((esp[i]["data"]["flags"].Value<int>() & 1) == 1) continue; //interior
-                        JArray refs = (JArray)esp[i]["references"];
-                        for (int refNum = 0; refNum < refs.Count; refNum++) {
-                            string id = refs[refNum]["id"].Value<string>();
-                            if (!formCounts.ContainsKey(id)) continue;
-                            if (espIdx > 0) formCountsTR[id]++;
-                            else formCounts[id]++;
-                        }
-                    }
-                }
-            }
-
-            Console.WriteLine("\r\n\r\n");
-
-            foreach (string mesh in meshForms.Keys) {
-                int meshCount = 0;
-                int trMeshCount = 0;
-
-                string modalForm = "";
-                int modalCount = -1;
-                for (int i = 0; i < meshForms[mesh].Count; i++) {
-                    string form = meshForms[mesh][i];
-                    int formCount = formCounts[form];
-                    if (formCount > modalCount) {
-                        modalCount = formCount;
-                        modalForm = form;
-                    }
-                    meshCount += formCount;
-                }
-                for (int i = 0; i < meshForms[mesh].Count; i++) {
-                    string form = meshForms[mesh][i];
-                    int formCount = formCountsTR[form];
-                    if (formCount > modalCount) {
-                        modalCount = formCount;
-                        modalForm = form;
-                    }
-                    trMeshCount += formCount;
-                }
-                if (meshCount == 0 && trMeshCount == 0) continue;
-                string lodData = meshLodData.ContainsKey(mesh) ? meshLodData[mesh] : "";
-                int triCount = meshTris.ContainsKey(mesh) ? meshTris[mesh] : 0;
-                int meshSize = meshSizes.ContainsKey(mesh) ? meshSizes[mesh] : 0;
-
-                Console.WriteLine($"{modalForm}|{mesh}|{meshCount}|{trMeshCount}|{triCount}|{lodData}".TrimEnd('|'));
-            }
-        }
-
-
-        public static void TES3StaticList(params string[] espPaths) {
-			HashSet<string> staticFormTypes = new HashSet<string> { "Static", "Activator", "Container", "Door", };
-
-			Dictionary<string, string> meshLodData = new Dictionary<string, string>();
-            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\lodmeshes3.txt")) {
-				StringBuilder lodData = new StringBuilder();
-                string[] split = line.Split('\t');
-				string mesh = split[1];
-				if (split.Length > 6) lodData.Append(split[6] + "|");
-                if (split.Length > 7) lodData.Append(split[7] + "|");
-                if (split.Length > 8) lodData.Append(split[8] + "|");
-                if (split.Length > 9) lodData.Append(split[9] + "|");
-				if (lodData.Length > 0) meshLodData[mesh] = lodData.ToString();
-            }
-
-
-            Dictionary<string, int> meshTris = new Dictionary<string, int>();
-            Dictionary<string, int> meshSizes = new Dictionary<string, int>();
-
-            foreach (string line in File.ReadAllLines(@"E:\Anna\Anna\Visual Studio\PythonScripts\meshstats.txt")) {
-                string[] words = line.Split('|');
-				string mesh = words[0].ToLower();
-                meshTris[mesh] = int.Parse(words[1]);
-                meshSizes[mesh] = (int)Math.Sqrt(double.Parse(words[3]));
-            }
-
-			Dictionary<string, List<string>> meshForms = new Dictionary<string, List<string>>();
-            Dictionary<string, int> formCounts = new Dictionary<string, int>();
-            Dictionary<string, int> formCountsTR = new Dictionary<string, int>();
-
-
-            Console.WriteLine("STATS....");
-            foreach (string espPath in espPaths) {
+			foreach (string espPath in espPaths) {
 				Console.WriteLine(espPath);
 				JArray esp = JArray.Parse(File.ReadAllText(espPath));
-                for (int i = 0; i < esp.Count; i++) {
+				for (int i = 0; i < esp.Count; i++) {
 					var entry = esp[i];
-                    if (entry["type"] != null && staticFormTypes.Contains(entry.Str("type")) && entry["id"] != null && entry["mesh"] != null)  {
-                        string id = entry.Str("id");
-                        string mesh = entry.Str("mesh").ToLower();
-						if (!meshForms.ContainsKey(mesh)) meshForms[mesh] = new List<string>();
-                        meshForms[mesh].Add(id);
-                        formCounts[id] = 0;
-						formCountsTR[id] = 0;
-                    }
-                }
-            }
-
-			Console.WriteLine("REFS....");
-            foreach (string espPath in espPaths) {
-                bool tr = !(Path.GetFileNameWithoutExtension(espPath) == "morrowind" || Path.GetFileNameWithoutExtension(espPath) == "bloodmoon");
-                Console.WriteLine(espPath);
-                JArray esp = JArray.Parse(File.ReadAllText(espPath));
-                for (int i = 0; i < esp.Count; i++) {
-                    if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell") {
-                        if ((esp[i]["data"]["flags"].Value<int>() & 1) == 1) continue; //interior
-                        JArray refs = (JArray)esp[i]["references"];
-                        for (int refNum = 0; refNum < refs.Count; refNum++) {
-                            string id = refs[refNum]["id"].Value<string>();
-							if (!formCounts.ContainsKey(id)) continue;
-							if (tr) formCountsTR[id]++;
-							else formCounts[id]++;
-                        }
-                    }
-                }
-            }
-
-			Console.WriteLine("\r\n\r\n");
-
-			foreach (string mesh in meshForms.Keys) {
-				int meshCount = 0;
-                int trMeshCount = 0;
-
-                string modalForm = "";
-				int modalCount = -1;
-				for(int i = 0; i < meshForms[mesh].Count; i++) {
-					string form = meshForms[mesh][i];
-					int formCount = formCounts[form];
-					if(formCount > modalCount) {
-						modalCount = formCount;
-						modalForm = form;
+					if (entry["type"] != null && entry.Str("type") == "Region") {
+						regions[entry.Str("id")] = entry.Str("name");
 					}
-					meshCount += formCount;
 				}
-                for (int i = 0; i < meshForms[mesh].Count; i++) {
-                    string form = meshForms[mesh][i];
-                    int formCount = formCountsTR[form];
-                    if (formCount > modalCount) {
-                        modalCount = formCount;
-                        modalForm = form;
-                    }
-                    trMeshCount += formCount;
-                }
-                if (meshCount == 0 && trMeshCount == 0) continue;
-                string lodData = meshLodData.ContainsKey(mesh) ? meshLodData[mesh] : "";
-                int triCount = meshTris.ContainsKey(mesh) ? meshTris[mesh] : 0;
-                int meshSize = meshSizes.ContainsKey(mesh) ? meshSizes[mesh] : 0;
+			}
 
-                Console.WriteLine($"{modalForm}|{mesh}|{meshCount}|{trMeshCount}|{meshCount * triCount}|{trMeshCount * triCount}|{triCount}|{lodData}".TrimEnd('|'));
-            }
-        }
+			foreach (string region in regions.Keys) {
+				Console.WriteLine($"{region}@{regions[region]}");
+			}
+		}
 
-        public static void TES3QuestInfo(string espPath) {
+
+
+		public static void TES3QuestInfo(string espPath) {
 
 			Dictionary<string, List<MW.Info>> questInfos = new Dictionary<string, List<MW.Info>>();
 			Dictionary<string, string> questNames = new Dictionary<string, string>();
@@ -1180,1377 +638,110 @@ namespace SmallScripts {
 				if (rec["type"] == null) continue;
 				string type = rec["type"].Value<string>();
 
-                if (type == "DialogueInfo") {
+				if (type == "DialogueInfo") {
 					inTopic = true;
-                    if (rec["quest_state"] != null && rec["quest_state"]["type"].Str() == "Name") {
-                        questNames[topic] = rec.Str("text");
-                    }
+					if (rec["quest_state"] != null && rec["quest_state"]["type"].Str() == "Name") {
+						questNames[topic] = rec.Str("text");
+					}
 
 
-                    MW.Info info = new MW.Info(topic, rec);
+					MW.Info info = new MW.Info(topic, rec);
 
-                    if (info.choice == -1) {
-                        //if the info sets a quest stage and doesn't require stages of the same quest, add it to the list of starters for that quest (should recursively check choices too)
-                        foreach (MW.QuestStage quest in info.quests) {
-                            bool starter = true;
-                            foreach (MW.QuestReq req in info.questReqs) {
-                                if (req.id == quest.id && !(req.comparison[0] == '<' || req.stage == 0)) { //if comparison is less than, evaluates true if don't have quest already
-                                    starter = false; break;
-                                }
-                            }
-                            if (starter) {
-                                if (!questInfos.ContainsKey(quest.id)) questInfos[quest.id] = new List<MW.Info>();
-                                questInfos[quest.id].Add(info);
-                            }
-                        }
-                    } else {
-                        topicChoices[info.choice] = info;
-                    }
-                } else {
-					if(inTopic) { //ended list of topic infos
-                        foreach (Info info in topicInfos) {
-                            foreach (int choiceNum in info.choiceNumbers) {
+					if (info.choice == -1) {
+						//if the info sets a quest stage and doesn't require stages of the same quest, add it to the list of starters for that quest (should recursively check choices too)
+						foreach (MW.QuestStage quest in info.quests) {
+							bool starter = true;
+							foreach (MW.QuestReq req in info.questReqs) {
+								if (req.id == quest.id && !(req.comparison[0] == '<' || req.stage == 0)) { //if comparison is less than, evaluates true if don't have quest already
+									starter = false; break;
+								}
+							}
+							if (starter) {
+								if (!questInfos.ContainsKey(quest.id)) questInfos[quest.id] = new List<MW.Info>();
+								questInfos[quest.id].Add(info);
+							}
+						}
+					} else {
+						topicChoices[info.choice] = info;
+					}
+				} else {
+					if (inTopic) { //ended list of topic infos
+						foreach (Info info in topicInfos) {
+							foreach (int choiceNum in info.choiceNumbers) {
 								info.choices.Add(topicChoices[choiceNum]);
 							}
-                        }
-                        topicInfos.Clear();
-                        topicChoices.Clear();
-                    }
+						}
+						topicInfos.Clear();
+						topicChoices.Clear();
+					}
 
-                    if (type == "Npc") {
-                        npcs.Add(rec["id"].Value<string>());
+					if (type == "Npc") {
+						npcs.Add(rec["id"].Value<string>());
 
-                    } else if (type == "Cell") {
-
-
-
-                        string cellName = rec["name"].Value<string>();
-
-                        if (cellName == "" && rec["region"] != null) cellName = rec["region"].Value<string>();
-
-                        if (rec["data"]["flags"].Value<string>().IndexOf("IS_INTERIOR") != -1) {
-                            int cellX = esp[i]["data"]["grid"][0].Value<int>();
-                            int cellY = esp[i]["data"]["grid"][1].Value<int>();
-                            cellName = cellName + $" ({cellX},{cellY})";
-                        }
-
-                        foreach (var refr in (JArray)rec["references"]) {
-                            string id = refr["id"].Value<string>();
-                            if (npcs.Contains(id)) {
-                                if (npcCells.ContainsKey(id)) {
-                                    npcCells[id] = "Multiple Cells";
-                                } else {
-                                    npcCells[id] = cellName;
-                                }
-
-                            }
-                        }
-
-                    } else if (type == "Dialogue") {
-                        topic = rec.Str("id");
-                    }
-                }
-
-            }
+					} else if (type == "Cell") {
 
 
 
-            foreach (string quest in questInfos.Keys) {
+						string cellName = rec["name"].Value<string>();
 
-                string questName = questNames.ContainsKey(quest) ? questNames[quest] : "";
-				foreach(MW.Info info in questInfos[quest]) {
-					foreach(MW.QuestStage questStage in info.quests) {
+						if (cellName == "" && rec["region"] != null) cellName = rec["region"].Value<string>();
+
+						if (rec["data"]["flags"].Value<string>().IndexOf("IS_INTERIOR") != -1) {
+							int cellX = esp[i]["data"]["grid"][0].Value<int>();
+							int cellY = esp[i]["data"]["grid"][1].Value<int>();
+							cellName = cellName + $" ({cellX},{cellY})";
+						}
+
+						foreach (var refr in (JArray)rec["references"]) {
+							string id = refr["id"].Value<string>();
+							if (npcs.Contains(id)) {
+								if (npcCells.ContainsKey(id)) {
+									npcCells[id] = "Multiple Cells";
+								} else {
+									npcCells[id] = cellName;
+								}
+
+							}
+						}
+
+					} else if (type == "Dialogue") {
+						topic = rec.Str("id");
+					}
+				}
+
+			}
+
+
+
+			foreach (string quest in questInfos.Keys) {
+
+				string questName = questNames.ContainsKey(quest) ? questNames[quest] : "";
+				foreach (MW.Info info in questInfos[quest]) {
+					foreach (MW.QuestStage questStage in info.quests) {
 						if (questStage.id != quest) continue;
 
-                        string location = npcCells.ContainsKey(info.speaker) ? npcCells[info.speaker] : "unknown location";
+						string location = npcCells.ContainsKey(info.speaker) ? npcCells[info.speaker] : "unknown location";
 
-                        Console.WriteLine($"{quest}|{questName}|{questStage.stage}|{info.speaker}|{location}|{info.playerFaction}|{info.playerRank}|{info.topic}|{info.miscFilters}");
+						Console.WriteLine($"{quest}|{questName}|{questStage.stage}|{info.speaker}|{location}|{info.playerFaction}|{info.playerRank}|{info.topic}|{info.miscFilters}");
 						break;
 					}
 				}
-            }
-        }
-
-		public static void MWDoors(string espPath, float cellStartX, float cellStartY, float cellSizeX, float cellSizeY = 0) {
-			if (cellSizeY == 0) cellSizeY = cellSizeX;
-			float unitSizeX = cellSizeX * 8192;
-            float unitSizeY = cellSizeY * 8192;
-            float minX = cellStartX * 8192;
-			float minY = cellStartY * 8192;
-			float maxX = minX + unitSizeX;
-			float maxY = minY + unitSizeY;
-
-			JArray esp = JArray.Parse(File.ReadAllText(espPath));
-			for (int i = 0; i < esp.Count; i++) {
-				var form = esp[i];
-				if (form["type"].Value<string>() != "Cell") continue;
-				if (form["data"]["flags"].Value<string>().IndexOf("IS_INTERIOR") != -1) continue; //interior
-                JArray refs = (JArray)form["references"];
-				for (int refNum = 0; refNum < refs.Count; refNum++) {
-					if (refs[refNum]["destination"] == null) continue;
-					JArray coords = (JArray)refs[refNum]["translation"];
-					float x = coords[0].Value<float>(); if (x < minX || x > maxX) continue;
-					float y = coords[1].Value<float>(); if (y < minY || y > maxY) continue;
-					string cellName = refs[refNum]["destination"]["cell"].Value<string>();
-					int xPos = (int)((x - minX) * 1000 / unitSizeX);
-					int yPos = 1000 - (int)((y - minY) * 1000 / unitSizeY);
-
-					Console.WriteLine($"{{{{Image Mark|{xPos}|{yPos}|{cellName}|{cellName}|position=on}}}}");
-				}
-				
-			}
-			Console.WriteLine("\r\n\r\n\r\n");
-		}
-
-		public static void TES3IntCellResizeTest() {
-			foreach (string imagePath in Directory.EnumerateFiles(@"F:\Extracted\Morrowind\tombs", "*.bmp")) {
-				MagickImage image = new MagickImage(imagePath);
-				image.Resize(image.Width / 2, image.Height / 2);
-				image.Trim(); image.RePage();
-				image.Draw(new Drawables().FillColor(MagickColors.White).FontPointSize(24).Gravity(Gravity.Northwest).Text(4, 4, Path.GetFileName(imagePath).Split('.')[0]));
-				image.Write(Path.Combine(@"F:\Extracted\Morrowind\tombsa", Path.GetFileNameWithoutExtension(imagePath) + ".png"));
-				Console.WriteLine(imagePath);
-
 			}
 		}
 
-		public static void TES3ListInts(string espPath) {
-			JArray esp = JArray.Parse(File.ReadAllText(espPath));
-			List<string> ints = new List<string>();
 
-			for (int i = 0; i < esp.Count; i++) {
-				if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell" && ((esp[i]["data"]["flags"].Value<int>() & 1) == 1)) {
-					ints.Add(esp[i]["id"].Value<string>());
-				}
-			}
-			if (ints.Count == 0) return;
 
-			int groupSize = 400;
-			for(int start = 0; start < ints.Count; start += groupSize) {
-				Console.WriteLine("if(i<1)");
-				Console.WriteLine("coc,\"" + ints[start] + "\"");
-				for (int i = 1; i < groupSize; i++) {
-					if (i + start >= ints.Count) break;
-					Console.WriteLine($"elseif(i<{i + 1})");
-					Console.WriteLine("coc,\"" + ints[i + start] + "\"");
-				}
-				Console.WriteLine("\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n");
-			}
 
-		}
 
-		public static void TES3GridmapCoords() {
-			MagickImage image = new MagickImage(MagickColors.Black, 40 * 128, 40 * 128);
-			for (int x = 0; x < 128; x++) {
-				Console.WriteLine(x);
-				for (int y = 0; y < 128; y++) {
-					image.Draw(new Drawables().FillColor(MagickColors.ForestGreen).Text(x * 40, 128 * 40 - y * 40 - 40, $"{x - 64},{y - 64}"));
-				}
-			}
-			image.Write("gridmapcoords.png");
-        }
 
 
-		public static void MWRegionCreateMaps(string espPath) {
-			int minX = int.MaxValue; int minY = int.MaxValue;
-			int maxX = int.MinValue; int maxY = int.MinValue;
 
-			JArray esp = JArray.Parse(File.ReadAllText(espPath));
-			string[,] cellRegions = new string[256, 256];
-			for (int i = 0; i < esp.Count; i++) {
-				if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell" && ((esp[i]["data"]["flags"].Value<int>() & 1) == 0)) {
-					//string cellName = esp[i]["id"].Value<string>();
-					var cellX = esp[i]["data"]["grid"][0].Value<int>();
-					var cellY = esp[i]["data"]["grid"][1].Value<int>();
-					string region = esp[i]["region"] is null ? "Wilderness" : esp[i]["region"].Value<string>();
-					if(region != "Wilderness") {
-						Console.WriteLine($"coe,{cellX},{cellY}");
-						if (cellX > maxX) maxX = cellX;
-						if (cellY > maxY) maxY = cellY;
-						if (cellX < minX) minX = cellX;
-						if (cellY < minY) minY = cellY;
 
-					}
-				}
-			}
 
-			Console.WriteLine();
-			Console.WriteLine($"{minX},{minY} to {maxX},{maxY}");
-			//foreach (string cell in cells) Console.WriteLine(cell);
 
-		}
 
-		public static void LocalMapCombine(string folder) {
-			int minX = int.MaxValue; int maxX = int.MinValue;
-			int minY = int.MaxValue; int maxY = int.MinValue;
-			foreach(string file in Directory.EnumerateFiles(folder, "*.bmp")) {
-				string coord = file.Substring(file.LastIndexOf('(') + 1);
-				coord = coord.Substring(0, coord.IndexOf(')'));
-				int x = int.Parse(coord.Substring(0, coord.IndexOf(',')));
-				if(x > maxX) maxX = x; if (x < minX) minX = x;
-				int y = int.Parse(coord.Substring(coord.IndexOf(',') + 1));
-				if (y > maxY) maxY = y; if (y < minY) minY = y;
-			}
-			Console.WriteLine($"({minX},{minY}) to ({maxX},{maxY})");
-			Console.WriteLine($"{(maxX - minX) * 512}x{(maxY - minY) * 512}");
-			TES3LocalMapCombine(512, minX, minY, maxX, maxY);
 
-        }
 
-		public static void TES3LocalMapCombine(int tileSize, int x1, int y1, int x2, int y2) {
-			MagickImage montage = new MagickImage(MagickColors.Black, tileSize * 8, tileSize * 8);
-			int xCount = x2 - x1; int yCount = y2 - y1;
-
-			for (int y = 0; y < xCount; y++) {
-				Console.Write("-");
-				for (int x = 0; x < yCount; x++) {
-					string search = $@"F:\Anna\Desktop\maps3 - Copy\{x1 + x},{y1 + y}.png";
-					if (File.Exists(search)) {
-						MagickImage image = new MagickImage(search);
-						montage.Draw(new Drawables().Composite(x * tileSize, (yCount - y) * tileSize, image));
-
-					}
-					//else Console.WriteLine(search);
-				}
-			}
-			montage.Write($@"F:\Anna\Desktop\map.png");
-
-		}
-
-		public static void TES3LocalMapCombine() {
-
-			int tileSize = 1024;
-
-			for(int mapX = -2; mapX < 3; mapX++) {
-				for (int mapY = -2; mapY < 4; mapY++) {
-					int startY =  mapY * 8; int startX = mapX * 8;
-					MagickImage montage = new MagickImage(MagickColors.Black, tileSize * 8, tileSize * 8);
-
-					for (int y = 0; y < 8; y++) {
-						Console.Write("-");
-						for (int x = 0; x < 8; x++) {
-							string search = $@"C:\Anna\Documents\My Games\OpenMW\maps\{startX + x},{startY + y}.bmp";
-							if (File.Exists(search)) {
-								MagickImage image = new MagickImage(search);
-								montage.Draw(new Drawables().Composite(x * tileSize, (7 - y) * tileSize, image));
-
-							}
-							//else Console.WriteLine(search);
-						}
-					}
-					Console.WriteLine();
-
-					Console.WriteLine($"{mapX},{mapY}");
-					montage.Write($@"F:\Anna\Desktop\maps1\{mapX},{mapY}.png");
-
-                }
-            }
-        }
-
-		public static void TES3WeatherValues() {
-			string[] weatherTypes = new string[] { "Clear", "Cloudy", "Foggy", "Thunderstorm", "Rain", "Overcast", "Ashstorm", "Blight", "Snow", "Blizzard" };
-			string[] tods = new string[] { "Sunrise", "Day", "Sunset", "Night" };
-			string[] weatherValues = new string[] { "Sky", "Fog", "Ambient", "Sun" };
-
-			foreach(string value in weatherValues) {
-				Console.WriteLine($"    vec4 {value}Colors[{weatherTypes.Length * tods.Length}]=vec4[](");
-				foreach(string weather in weatherTypes) {
-					foreach(string tod in tods) {
-						string search = $"Weather_{weather}_{value}_{tod}_Color";
-						foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\weathercolors.txt")){
-							if (line.StartsWith(search)) {
-								var words = line.Split(',');
-								float r = ((float)byte.Parse(words[1]))/ 255;
-								float g = ((float)byte.Parse(words[2])) / 255;
-								float b = ((float)byte.Parse(words[3])) / 255;
-								Console.WriteLine($"        vec4({r},{g},{b},1),");
-							}
-						}
-
-					}
-				}
-				Console.WriteLine("    );\r\n");
-            }
-		}
-
-
-		public static void TES3WeatherColors() {
-			string[] lines = File.ReadAllLines(@"F:\Extracted\Morrowind\weathercolors.txt");
-			MagickImage image = new MagickImage(MagickColors.White, 512, lines.Length * 32);
-			for(int i = 0; i < lines.Length; i++) {
-				var words = lines[i].Split(',');
-				byte r = byte.Parse(words[1]);
-				byte g = byte.Parse(words[2]);
-				byte b = byte.Parse(words[3]);
-				MagickColor color = new MagickColor(r, g, b);
-
-				image.Draw(new Drawables().FillColor(color).Rectangle(0, 32 * i, 512, 32 * i + 32));
-				image.Draw(new Drawables().StrokeColor(MagickColors.Black).StrokeWidth(4).Text(4, 32 * i + 16, words[0]));
-				image.Draw(new Drawables().FillColor(MagickColors.White).Text(4, 32 * i + 16, words[0]));
-
-				Console.WriteLine(words[0]);
-				//if (i > 10) break;
-            }
-			image.Write("MorrowindWeatherColors.png");
-
-		}
-
-		public static void FO3LodCombine() {
-			MagickImageCollection lodimages = new MagickImageCollection();
-			for(int y = 0; y < 32; y++) {
-				for(int x = 31; x >= 0; x--) {
-					string path = $@"F:\Extracted\BGS\Fallout3\textures\landscape\lod\wasteland\diffuse\wasteland.n.level4.x{x * 4 - 64}.y{y * 4 - 64}.dds";
-					lodimages.Add(new MagickImage(path));
-                }
-            }
-			var combined = lodimages.Montage(new MontageSettings() { Geometry = new MagickGeometry(256) });
-			Console.WriteLine("Writing...");
-			combined.Write("fo3.png");
-			Console.WriteLine("Done.");
-		}
-
-		public static void FO76DepthMap(string path) {
-			MagickImage image = new MagickImage(path);
-			ushort[] data = new ushort[image.Width * image.Height];
-			int i = 0;
-			foreach (var pixel in image.GetPixels()) {
-				var color = pixel.ToColor();
-				int col = color.G + color.B / 256;
-				//Console.WriteLine(col);
-				data[i] = (ushort)col;
-				i++;
-            }
-			byte[] byteData = new byte[data.Length * 2];
-			Buffer.BlockCopy(data, 0, byteData, 0, byteData.Length);
-
-			//MagickImage output = new MagickImage(byteData, new PixelReadSettings(image.Width, image.Height, StorageType.Short, "R"));
-
-			//output.Format = MagickFormat.Gray;
-			//output.Depth = 16;
-
-			//output.Write(path.Replace(".dds", ".r16"));
-        }
-		/*
-		public static void MWTesAnnwynColorMap() {
-			Dictionary<MagickColor, MagickColor> colorMap = new Dictionary<MagickColor, MagickColor>();
-			colorMap[MagickColors.Black] = new MagickColor(0, 0, 0);
-
-			string[] lines = File.ReadAllLines(@"F:\Extracted\BethesdaGameStudioUtils\TESAnnwyn\tesannwyn-ltex3.dat");
-
-			MagickImage defaultLand = new MagickImage(@"E:\Programs\Steam\steamapps\common\Morrowind\Data Files\textures\_land_default.tga");
-			defaultLand.Resize(1, 1);
-			MagickColor defaultColor = (MagickColor)defaultLand.GetPixels().GetPixel(0, 0).ToColor();
-			colorMap[MagickColors.Black] = defaultColor;
-
-
-			foreach (string line in lines) {
-				string[] words = line.Split(',');
-				if (words.Length < 4) continue;
-
-				string texname = words[2].ToLower().Replace(".tga", ".dds");
-				if (File.Exists(@"F:\Extracted\Morrowind\textures\" + texname)) {
-					MagickImage image = new MagickImage(@"F:\Extracted\Morrowind\textures\" + texname);
-
-					image.Resize(1, 1);
-					ushort g = (ushort) (byte.Parse(words[0]) * 256);
-					//g++;
-					MagickColor c1 = new MagickColor(0, 0, 0);
-					MagickColor c2 = (MagickColor)image.GetPixels().GetPixel(0, 0).ToColor();
-					colorMap[c1] = c2;
-					Console.WriteLine($"{c1.R} {c1.G} {c1.B} - {c2.R} {c2.G} {c2.B} - {texname}");
-					//Console.WriteLine($"{words[0]} {texname} {color.R} {color.G} {color.B}");
-				}
-			}
-
-
-			BinaryReader r = new BinaryReader(File.OpenRead(@"F:\Extracted\BethesdaGameStudioUtils\TESAnnwyn\tesannwyn-vtex3.bmp"));
-			r.BaseStream.Seek(18, SeekOrigin.Begin);
-			int width = r.ReadInt32();
-			int height = r.ReadInt32();
-			
-			PixelReadSettings pixelRead = new PixelReadSettings(width, height, StorageType.Short, "R");
-
-			r.BaseStream.Seek(54, SeekOrigin.Begin);
-			byte[] data = r.ReadBytes(2 * width * height);
-
-			for (byte i = 0; i < 107; i++) data[i * 2] = (byte) (i + 1);
-
-			r.Close();
-			MagickImage map = new MagickImage(data, pixelRead);
-			map.Flip();
-			map.Evaluate(Channels.All, EvaluateOperator.Multiply, 256);
-			//map.Depth = 8;
-			//map.ColorSpace = ColorSpace.RGB;
-			//map.Format = MagickFormat.Rgb;
-
-			Console.WriteLine(map.Depth);
-			Console.WriteLine(map.Format);
-
-			//map.Write(@"F:\Extracted\BethesdaGameStudioUtils\TESAnnwyn\tesannwyn-vtex3-recolor.png");
-			//map.Depth = 8; map.Format = MagickFormat.Rgb;
-
-			//MagickReadSettings colorReadSettings = new MagickReadSettings { Format = MagickFormat.Rgb, Depth = 16, Width = width, Height = height };
-			MagickImage colorImage = new MagickImage(MagickColors.Red, width, height);
-			colorImage.Composite(map);
-
-			colorImage.ColorFuzz = new Percentage(0);
-			foreach (var color in colorMap.Keys) {
-				colorImage.Opaque(color, colorMap[color]);
-			}
-			colorImage.Write(@"F:\Extracted\BethesdaGameStudioUtils\TESAnnwyn\tesannwyn-vtex3-recolor.png");
-
-
-
-
-
-
-		}
-		*/
-
-		public static void MWMapResize(int oldSize, int newSize) {
-			foreach(string line in File.ReadAllLines(@"E:\Anna\Anna\Visual Studio\MWMap\index.html")) {
-				if (!line.Contains("style=\"left:")) continue;
-				var split = line.Split('"');
-				var split2 = new string[7];
-				split2[0] = split[0];
-				split2[1] = split[1];
-				split2[2] = split[4];
-				split2[3] = split[5];
-				split2[4] = split[2];
-				split2[5] = split[3];
-				split2[6] = split[6];
-				//var split2 = split[5].Split(':', ';');
-				//float left = float.Parse(split2[1]);
-				//float top = float.Parse(split2[3]);
-				//split[5] = $"left:{(int)(left + 0.5)};top:{(int)(top + 0.5)}";
-				//split[5] = $"left:{left * newSize / oldSize};top:{top * newSize / oldSize}";
-				for (int i = 0; i < split2.Length - 1; i++) Console.Write(split2[i] + "\"");
-				Console.WriteLine(split2[split2.Length - 1]);
-			}
-        }
-
-
-		public static void OpenMWMapCombine(string folder, int tileSize = 256) {
-
-			int minX = int.MaxValue; int maxX = int.MinValue;
-			int minY = int.MaxValue; int maxY = int.MinValue;
-
-
-			foreach (string path in Directory.EnumerateFiles(folder, "*.bmp")) {
-                string coord = path.Substring(path.LastIndexOf('(') + 1);
-                coord = coord.Substring(0, coord.IndexOf(')'));
-                int x = int.Parse(coord.Substring(0, coord.IndexOf(',')));
-                if (x > maxX) maxX = x; if (x < minX) minX = x;
-                int y = int.Parse(coord.Substring(coord.IndexOf(',') + 1));
-                if (y > maxY) maxY = y; if (y < minY) minY = y;
-                Console.Write($"{x} {y}, ");
-			}
-			Console.WriteLine();
-			Console.WriteLine($"{minX},{minY} to {maxX},{maxY}");
-			int xCount = maxX - minX + 1; int yCount = maxY - minY + 1;
-			Console.WriteLine($"{xCount * tileSize}x{yCount * tileSize}");
-
-
-			MagickImageCollection montage = new MagickImageCollection();
-			for (int i = 0; i < xCount * yCount; i++) montage.Add(new MagickImage(MagickColors.Black, 1, 1));
-
-
-			//MagickImage map = new MagickImage(MagickColors.Black, (maxX - minX + 1) * tileSize, (maxY - minY + 1) * tileSize);
-
-			foreach (string path in Directory.EnumerateFiles(folder, "*.bmp")) {
-                string coord = path.Substring(path.LastIndexOf('(') + 1);
-                coord = coord.Substring(0, coord.IndexOf(')'));
-                int x = int.Parse(coord.Substring(0, coord.IndexOf(',')));
-                int y = int.Parse(coord.Substring(coord.IndexOf(',') + 1));
-                int xOffset = x - minX;
-				int yOffset = maxY - y;
-				montage[xOffset + yOffset * xCount] = new MagickImage(path);
-
-				//map.Draw(new Drawables().Composite((x - minX) * tileSize, map.Height - (y - minY) * tileSize - tileSize, image));
-				//i++; if (i % 10 == 0) 
-					Console.WriteLine(path);
-			}
-
-			MontageSettings montageSettings = new MontageSettings() { Geometry = new MagickGeometry(tileSize), TileGeometry = new MagickGeometry(xCount, yCount) };
-			var map = montage.Montage(montageSettings);
-			WebPWriteDefines write = new WebPWriteDefines() { Lossless = true, Method = 0 };
-			//JxlWriteDefines write = new JxlWriteDefines() { Effort = 2 };
-			map.Quality = 20;
-
-			int imageCount = 0;
-			while (File.Exists($"openmwmap_{imageCount}.webp")) imageCount++;
-
-			map.Write($"openmwmap_{imageCount}.webp", write);
-		}
-
-
-		public static void MWMapCombine() {
-
-			int minX = int.MaxValue; int maxX = int.MinValue;
-			int minY = int.MaxValue; int maxY = int.MinValue;
-
-
-			foreach (string path in Directory.EnumerateFiles(@"E:\Programs\Steam\steamapps\common\Morrowind\Maps", "*.bmp")) {
-				string coord = Path.GetFileName(path);
-				coord = coord.Substring(coord.IndexOf('(') + 1);
-				var split = coord.Split(',', ')');
-				int x = int.Parse(split[0]); if (x > maxX) maxX = x; if (x < minX) minX = x;
-				int y = int.Parse(split[1]); if (y > maxY) maxY = y; if (y < minY) minY = y;
-				Console.WriteLine($"{x} {y}");
-            }
-
-			Console.WriteLine($"{minX},{minY} to {maxX},{maxY}");
-
-			
-
-			MagickImage map = new MagickImage(MagickColors.Black, (maxX - minX) * 256, (maxY - minY) * 256);
-
-			int i = 0;
-			foreach (string path in Directory.EnumerateFiles(@"E:\Programs\Steam\steamapps\common\Morrowind\Maps", "*.bmp")) {
-				string coord = Path.GetFileName(path);
-				coord = coord.Substring(coord.IndexOf('(') + 1);
-				var split = coord.Split(',', ')');
-				int x = int.Parse(split[0]);
-				int y = int.Parse(split[1]);
-				MagickImage image = new MagickImage(path);
-				map.Draw(new Drawables().Composite((x - minX) * 256, map.Height - (y - minY) * 256  -256, image));
-				i++; if (i % 10 == 0) Console.WriteLine(path);
-			}
-			map.Write("morrowind.bmp");
-		}
-
-		public static void MWRegionDoors(string espPath) {
-			int cellSize = 64;
-			int xAdd = 42 * 8192;
-			int yAdd = 38 * 8192;
-
-			//HashSet<string> cells = new HashSet<string>();
-			Dictionary<string, string> cellTypes = new Dictionary<string, string>();
-			foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypes.txt")) {
-				var split = line.Split('\t');
-				cellTypes[split[0]] = split[1];
-			}
-
-
-			JArray esp = JArray.Parse(File.ReadAllText(espPath));
-			string[,] cellRegions = new string[256, 256];
-			for (int i = 0; i < esp.Count; i++) {
-				if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell" && ((esp[i]["data"]["flags"].Value<int>() & 1) == 0)) {
-					//string cellName = esp[i]["id"].Value<string>();
-					var cellX = esp[i]["data"]["grid"][0].Value<int>();
-					var cellY = esp[i]["data"]["grid"][1].Value<int>();
-					string region = esp[i]["region"] is null ? "Wilderness" : esp[i]["region"].Value<string>();
-					cellRegions[128 + cellX, 128 + cellY] = region;
-				}
-			}
-
-			Dictionary<string, string> intCellRegions = new Dictionary<string, string>();
-
-
-			for (int i = 0; i < esp.Count; i++) {
-				if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell" && ((esp[i]["data"]["flags"].Value<int>() & 1) == 1)) {
-					string cellName = esp[i]["id"].Value<string>();
-					//var cellX = esp[i]["data"]["grid"][0].Value<int>();
-					//var cellY = esp[i]["data"]["grid"][1].Value<int>();
-					//string region = esp[i]["region"] is null ? "Wilderness" : esp[i]["region"].Value<string>(); 
-
-					//if (!isInterior) Console.WriteLine($"{region} {cellName} {cellX} {cellY}");
-					JArray refs = (JArray)esp[i]["references"];
-					for (int refNum = 0; refNum < refs.Count; refNum++) {
-
-						if (refs[refNum]["door_destination_coords"] != null) {
-
-							if (refs[refNum]["door_destination_cell"] != null) {
-								//Console.WriteLine(cellName + " -> " + refs[refNum]["door_destination_cell"].Value<string>());
-							} else {
-
-								JArray coords = (JArray)refs[refNum]["door_destination_coords"];
-								float x = coords[0].Value<float>();
-								float y = coords[1].Value<float>();
-								float xMap = (x + xAdd) * cellSize / 8192;
-								float yMap = (yAdd - y) * cellSize / 8192;
-
-								string type = cellTypes.ContainsKey(cellName) ? cellTypes[cellName] : "unknown";
-								cellName = cellName.Split(',')[0];
-
-								float xAdj = (x > 0) ? x : x - 8192; //to counteract rounding down
-								float yAdj = (y > 0) ? y : y - 8192; //to counteract rounding down
-								int cellX = (int)(xAdj / 8192);
-								int cellY = (int)(yAdj / 8192);
-
-								string region = cellRegions[cellX + 128, cellY + 128];
-								if (region is null) region = "NULLREGION";
-								region = region.EndsWith(" Region") ? region.Substring(0, region.Length - 7) : region;
-
-								if (!intCellRegions.ContainsKey(cellName)) {
-									intCellRegions[cellName] = region;
-									Console.WriteLine($"{region}_{type}_{cellName}_{cellX}_{cellY}");
-								} else if (intCellRegions[cellName] != region) Console.WriteLine($"CELL IN MULTIPLE REGIONS {cellName} {intCellRegions[cellName]} {region}");
-
-								//cells.Add(cellName);
-								//
-								//Console.WriteLine($"{cellName} -> ({xMap},{yMap})");
-							}
-						}
-					}
-				}
-			}
-			Console.WriteLine("\r\n\r\n\r\n");
-			//foreach (string cell in cells) Console.WriteLine(cell);
-
-		}
-
-		public static void MWUnknownDoords(string espPath) {
-            Dictionary<string, string> cellTypes = new Dictionary<string, string>();
-            HashSet<string> cells = new HashSet<string>();
-            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypes.txt")) {
-                var split = line.Split('\t');
-                cellTypes[split[0]] = split[1];
-            }
-
-            JArray esp = JArray.Parse(File.ReadAllText(espPath));
-            for (int i = 0; i < esp.Count; i++) {
-                if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell") {
-                    string cellName = esp[i]["id"].Value<string>();
-                    //Console.WriteLine(cellName);
-                    JArray refs = (JArray)esp[i]["references"];
-                    for (int refNum = 0; refNum < refs.Count; refNum++) {
-                        if (refs[refNum]["door_destination_coords"] != null) {
-                            if (refs[refNum]["door_destination_cell"] != null) {
-                                //Console.WriteLine(cellName + " -> " + refs[refNum]["door_destination_cell"].Value<string>());
-                            } else {
-                                cells.Add(cellName);
-                                //Console.WriteLine($"{cellName} -> ({xMap},{yMap})");
-                            }
-                        }
-                    }
-                }
-            }
-
-			foreach (string cell in cells) if (!cellTypes.ContainsKey(cell)) Console.WriteLine(cell);
-
-
-
-        }
-
-        struct Float2 {
-			public float x;
-			public float y;
-        }
-
-        public static void DoorsListNew(string espPath) {
-            int cellSize = 64;
-            int xAdd = 42 * 8192;
-            int yAdd = 38 * 8192;
-
-			HashSet<string> cells = new HashSet<string>();
-
-            Dictionary<string, List<Float2>> mergePositions = new Dictionary<string, List<Float2>>();
-            Dictionary<string, string> mergeTypes = new Dictionary<string, string>();
-
-            Dictionary<string, string> cellTypes = new Dictionary<string, string>();
-			Dictionary<string, string> cellSources = new Dictionary<string, string>();
-
-
-            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypes.txt")) {
-                var split = line.Split('\t');
-                cellTypes[split[0]] = split[1];
-				if(split.Length > 2) cellSources[split[0]] = split[2];
-            }
-
-
-            JArray esp = JArray.Parse(File.ReadAllText(espPath));
-
-            Dictionary<int, string> cellRegions = new Dictionary<int, string>();
-            for (int i = 0; i < esp.Count; i++) {
-				var cell = esp[i];
-
-                if (cell["type"] != null && cell["type"].Value<string>() == "Cell") {
-                    bool isInterior = (cell["data"]["flags"].Value<int>() & 1) > 0;
-					if(!isInterior) {
-                        int x = cell["data"]["grid"][0].Value<int>();
-                        int y = cell["data"]["grid"][1].Value<int>();
-
-                        if (cell["region"] != null) {
-							string region = cell["region"].Value<string>();
-							cellRegions[x + y * 128] = region;
-                        }
-                    }
-                }
-            }
-
-            for (int i = 0; i < esp.Count; i++) {
-                if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell") {
-                    string cellName = esp[i]["id"].Value<string>();
-
-
-                    //Console.WriteLine(cellName);
-                    JArray refs = (JArray)esp[i]["references"];
-                    for (int refNum = 0; refNum < refs.Count; refNum++) {
-                        if (refs[refNum]["door_destination_coords"] != null) {
-                            if (refs[refNum]["door_destination_cell"] != null) {
-                                //Console.WriteLine(cellName + " -> " + refs[refNum]["door_destination_cell"].Value<string>());
-                            } else {
-                                if (cells.Contains(cellName)) continue;
-                                cells.Add(cellName);
-
-                                JArray coords = (JArray)refs[refNum]["door_destination_coords"];
-                                float x = coords[0].Value<float>();
-                                float y = coords[1].Value<float>();
-								int cellX = (int)(x / 8192);
-								int cellY = (int)(y / 8192);
-                                //float xMap = (x + xAdd) * cellSize / 8192;
-                                //float yMap = (yAdd - y) * cellSize / 8192;
-
-                                string type = cellTypes.ContainsKey(cellName) ? cellTypes[cellName] : "unknown";
-								string source = cellSources.ContainsKey(cellName) ? cellSources[cellName] : "";
-
-                                int _t = cellName.IndexOf(',');
-                                if (_t == -1) _t = cellName.IndexOf(':');
-                                string mergeName = _t != -1 ? cellName.Substring(0, _t) : "";
-
-								string region = cellRegions.ContainsKey(cellX + cellY * 128) ? cellRegions[cellX + cellY * 128] : "wilderness";
-
-								Console.WriteLine($"{cellName}@{type}@{mergeName}@{region}@{source}");
-
-                                //Console.WriteLine($"{cellName} -> ({xMap},{yMap})");
-                            }
-                        }
-                    }
-                }
-            }
-			/*
-            foreach (string mergeName in mergePositions.Keys) {
-                float x = 0;
-                float y = 0;
-                var positions = mergePositions[mergeName];
-
-                foreach (Float2 pos in positions) {
-                    x += pos.x; y += pos.y;
-                }
-                x /= positions.Count; y /= positions.Count;
-                string type = mergeTypes[mergeName];
-                string markerType = type.Contains("_town") || type.Contains("_city") || type.Contains("_fort") ? "mark" : "icon";
-                Console.WriteLine($"<div class=\"{markerType} {mergeTypes[mergeName].Substring(0, 3)} {mergeTypes[mergeName]}\" style=\"left:{(int)(x + 0.5)};top:{(int)(y + 0.5)};\" title=\"{mergeName}\"></div>");
-
-            }
-			*/
-            //Console.WriteLine("\r\n\r\n\r\n");
-            //foreach (string cell in cells) Console.WriteLine(cell);
-
-        }
-
-		class CellInfo {
-			public string name;
-			public string type;
-			public string merge;
-			public bool settlement;
-
-			public static Dictionary<string, CellInfo> GetCellInfo(params string[] cellTypeFiles) {
-				var dict = new Dictionary<string, CellInfo>();
-				foreach (string cellTypeFile in cellTypeFiles) {
-					foreach (string line in File.ReadAllLines(cellTypeFile)) {
-						string[] split = line.Split('\t');
-						CellInfo info = new CellInfo() { name = split[0], type = split[1], merge = split[2], settlement = split[4] == "Settlement" };
-						dict[info.name] = info;
-					}
-				}
-				return dict;
-			}
-		}
-
-		
-
-
-		public static void MapFlora(params string[] espPaths) {
-			int cellSize = 64;
-			int xAdd = 42 * 8192;
-			int yAdd = 38 * 8192;
-
-			float minX = float.MaxValue;
-			float minY = float.MaxValue;
-			float maxX = float.MinValue;
-			float maxY = float.MinValue;
-
-			Dictionary<string, string> floraIds = new Dictionary<string, string>();
-			Dictionary<string, List<Vector2>> floraPositions = new Dictionary<string, List<Vector2>>();
-			Dictionary<string, Dictionary<string, int>> floraRegionCounts = new Dictionary<string, Dictionary<string, int>>();
-			Dictionary<string, int> floraEspIds = new Dictionary<string, int>();
-			Dictionary<string, int> regionCellCounts = new Dictionary<string, int>();
-			Dictionary<string, int> floraTotals = new Dictionary<string, int>();
-
-			for (int espIndex = 0; espIndex < espPaths.Length; espIndex++) {
-				Console.WriteLine(espPaths[espIndex]);
-				JArray esp = JArray.Parse(File.ReadAllText(espPaths[espIndex]));
-				for (int i = 0; i < esp.Count; i++) {
-					var form = esp[i];
-					string formType = form["type"].Str();
-					if (formType == "Container") {
-						string id = form.Str("id");
-						if (id.Contains("Flora") || id.Contains("flora")) {
-							string floraType = form.Str("name");
-							//int letter = id.Length - 1;
-							//while (letter >= 0 && (char.IsDigit(id[letter]) || id[letter] == '_')) {
-							//	letter--;
-							//}
-							//string floraType = id.Substring(0, letter + 1);
-							//Console.WriteLine($"{id} - {floraType} - {form.Str("name")}");
-							floraIds[id] = floraType;
-							if (!floraEspIds.ContainsKey(floraType)) {
-								floraTotals[floraType] = 0;
-								floraEspIds[floraType] = espIndex;
-							}
-						}
-					} else if (formType == "Cell") {
-						if (form["data"]["flags"].Value<string>().IndexOf("IS_INTERIOR") != -1) {
-
-						} else {
-
-							string region = form["region"] == null ? "NO REGION" : form.Str("region");
-							if(!regionCellCounts.ContainsKey(region)) regionCellCounts[region] = 0;
-							regionCellCounts[region]++;
-							//Console.WriteLine(cellName);
-							JArray refs = (JArray)form["references"];
-							for (int refNum = 0; refNum < refs.Count; refNum++) {
-								var reference = refs[refNum];
-								string refId = reference.Id();
-								if (floraIds.ContainsKey(refId)) {
-									string floraType = floraIds[refId];
-									if(!floraRegionCounts.ContainsKey(floraType)) floraRegionCounts[floraType] = new Dictionary<string, int>();
-									var regionCounts = floraRegionCounts[floraType];
-									if (!regionCounts.ContainsKey(region)) regionCounts[region] = 0;
-									regionCounts[region]++;
-									floraTotals[floraType]++;
-
-									if (!floraPositions.ContainsKey(floraType)) floraPositions[floraType] = new List<Vector2>();
-									float x = reference["translation"][0].Value<float>();
-									float y = reference["translation"][1].Value<float>();
-                                    if (x < minX) minX = x;
-                                    if (x > maxX) maxX = x;
-									if (y < minY) minY = y;
-									if (y > maxY) maxY = y;
-									floraPositions[floraType].Add(new Vector2 { x = x, y = y });
-
-
-									//float xMap = (x + xAdd) * cellSize / 8192;
-									//float yMap = (yAdd - y) * cellSize / 8192;
-									//Console.WriteLine($"<div class=\"flora {floraType}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{refId}\"></div>");
-								}
-							}
-						}
-					}
-				}
-			}
-
-			//foreach (string floraType in floraRegionCounts.Keys) {
-			//	if (floraTotals[floraType] < 2) continue;
-			//	var regionCounts = floraRegionCounts[floraType];
-   //             foreach (string region in regionCounts.Keys) {
-			//		int count = regionCounts[region];
-			//		Console.WriteLine($"{floraEspIds[floraType]}|{floraType}|{region}|{count}|{((float)count)/regionCellCounts[region]}");
-   //             }
-   //         }
-
-
-
-            //return;
-			int cellMinX = (int)(minX / 8192) - 1;
-			int cellMinY = (int)(minY / 8192) - 1;
-			int cellMaxX = (int)(maxX / 8192) + 1;
-			int cellMaxY = (int)(maxY / 8192) + 1;
-			int cellsX = cellMaxX - cellMinX;
-			int cellsY = cellMaxY - cellMinY;
-			
-			Console.WriteLine($"({cellMinX},{cellMinY}) to ({cellMaxX},{cellMaxY})");
-			//MagickImageCollection images = new MagickImageCollection();
-
-			foreach (string floraType in floraPositions.Keys) {
-				Console.WriteLine(floraType);
-				byte[] data = new byte[cellsX * cellSize * cellsY * cellSize * 4];
-
-				foreach (Vector2 pos in floraPositions[floraType]) {
-					int xMap = (int)(pos.x * cellSize / 8192) - (cellMinX * cellSize);
-                    int yMap = (int)(pos.y * cellSize / 8192) - (cellMinY * cellSize);
-					int offset = (xMap + yMap * cellSize * cellsX) * 4;
-					byte newval = (byte)Math.Min(data[offset] + 64, 255);
-                    data[offset] = newval;
-					data[offset + 1] = newval;
-					data[offset + 2] = newval;
-					data[offset + 3] = 255;
-				}
-
-                MagickImage image = new MagickImage(data, new MagickReadSettings { Width = cellsX * cellSize, Height = cellsY * cellSize, Depth = 8, Format = MagickFormat.Rgba });
-				image.Flip();
-				image.Blur(8, 2);
-				image.Level(0, 8192);
-				//images.Add(image);
-                WebPWriteDefines defines = new WebPWriteDefines() { Lossless = true };
-                image.Write(@"E:\Extracted\Morrowind\floramaps\" + floraType + ".webp", defines);
-
-            }
-			//images.Write(@"E:\Extracted\Morrowind\floramaps\floramaps.psd");
-        }
-
-
-        public static void MapNpcsNew(params string[] espPaths) {
-			bool mapInsteadOfList = false;
-
-            int cellSize = 64;
-            int xAdd = 42 * 8192;
-            int yAdd = 38 * 8192;
-
-			var cellInfo = CellInfo.GetCellInfo(@"E:\Extracted\Morrowind\celltypesGF.txt");
-			Dictionary<(int, int), List<(float, float, CellInfo)>> cellDoors = new Dictionary<(int, int), List<(float, float, CellInfo)>>();
-
-            Dictionary<string, string> scriptText = new Dictionary<string, string>();
-
-            Dictionary<string, string> npcs = new Dictionary<string, string>();
-            HashSet<string> npcDisabled = new HashSet<string>();
-            HashSet<string> npcHostile = new HashSet<string>();
-
-			Dictionary<string, int> npcCounts = new Dictionary<string, int>();
-			Dictionary<string, int> guardCounts = new Dictionary<string, int>();
-
-			HashSet<string> guardNames = new HashSet<string>();
-
-			List<JToken> npcRefs = new List<JToken>();
-			foreach(string espPath in espPaths) {
-                JArray esp = JArray.Parse(File.ReadAllText(espPath));
-                for (int i = 0; i < esp.Count; i++) {
-                    var form = esp[i];
-                    string formType = form["type"].Str();
-                    if (formType == "Script") {
-                        scriptText[form.Str("id")] = form.Str("text");
-                    } else if (formType == "Npc") {
-                        string formId = form["id"].Str();
-                        if (form["data"]["stats"] != null && form["data"]["stats"]["health"].Int() == 0) continue;
-                        string npcName = form["name"].Str();
-                        if (npcName.StartsWith("Guard") || npcName.EndsWith("Guard") || npcName.EndsWith("Sharpshooter") || npcName.Contains("Ordinator")) guardNames.Add(npcName);
-                        npcs[formId] = npcName;
-                        if (form["ai_data"]["fight"].Value<int>() > 70) npcHostile.Add(formId);
-                        if (form["script"] != null) {
-                            string scriptName = form.Str("script");
-                            if (!scriptText.ContainsKey(scriptName)) continue;
-                            string script = scriptText[scriptName];
-                            script = script.Replace("\r\n", " ");
-                            script = script.Replace("\t", " ");
-                            foreach (string token in script.Split(new char[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries)) {
-                                if (token == "disable" || token == "Disable") {
-                                    npcDisabled.Add(formId);
-                                    break;
-                                }
-                            }
-                        }
-                    } else if (formType == "Cell") {
-                        if (form["data"]["flags"].Value<string>().IndexOf("IS_INTERIOR") != -1) {
-                            if (!mapInsteadOfList) {
-                                string cellName = form.Str("name");
-                                if (!cellInfo.ContainsKey(cellName)) continue;
-                                if (!cellInfo[cellName].settlement) continue;
-                                JArray refs = (JArray)form["references"];
-                                for (int refNum = 0; refNum < refs.Count; refNum++) {
-                                    string refId = refs[refNum].Str("id");
-                                    if (npcs.ContainsKey(refId)) {
-                                        string npcName = npcs[refId];
-                                        string mergeName = cellInfo[cellName].merge;
-                                        if (guardNames.Contains(npcName)) {
-                                            if (!guardCounts.ContainsKey(mergeName)) guardCounts[mergeName] = 0;
-                                            guardCounts[mergeName]++;
-                                        } else {
-                                            if (!npcCounts.ContainsKey(mergeName)) npcCounts[mergeName] = 0;
-                                            npcCounts[mergeName]++;
-                                        }
-                                        Console.WriteLine($"{cellInfo[cellName].merge}|{cellName}|{npcs[refId]}");
-                                    }
-                                }
-                            }
-                        } else {
-                            //Console.WriteLine(cellName);
-                            JArray refs = (JArray)form["references"];
-                            for (int refNum = 0; refNum < refs.Count; refNum++) {
-                                var reference = refs[refNum];
-
-                                if (reference["destination"] != null) {
-                                    float x = reference["translation"][0].Value<float>();
-                                    float y = reference["translation"][1].Value<float>();
-                                    int cellX = (int)(x / 8192);
-                                    int cellY = (int)(y / 8192);
-
-                                    string destinationCell = reference["destination"].Str("cell");
-                                    if (cellInfo.ContainsKey(destinationCell)) {
-                                        if (!cellDoors.ContainsKey((cellX, cellY))) cellDoors[(cellX, cellY)] = new List<(float, float, CellInfo)>();
-                                        cellDoors[(cellX, cellY)].Add((x, y, cellInfo[destinationCell]));
-                                    } else {
-                                        Console.WriteLine(destinationCell + " MISSING CELL INFO");
-                                    }
-                                } else if (npcs.ContainsKey(reference.Str("id"))) {
-                                    npcRefs.Add(reference);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-
-			float defaultSearchDist = 3250;
-            Dictionary<string, float> settlementRadiusOverrides = new Dictionary<string, float>() {
-                { "Caldera", 2000 },
-				{ "Vivec", 6000 },
-				{ "Molag Mar", 6000 },
-				{ "Tel Aruhn",  5000 },
-
-                { "Fort Ancylis",  5000 },
-                { "Bal Foyen",  2000 },
-				{ "Dondril", 6000 },
-				{ "Ald Iuval", 3600 },
-				{ "Narsis", 4500 },
-				{ "Necrom", 10000 },
-				{ "Akamora", 4000 },
-				{ "Alt Bosara", 4000 },
-				{ "Marog", 4000 },
-				{ "Tel Mothrivra", 4000 },
-				{ "Port Telvannis", 11000 },
-				{ "Oran Plantation", 6400 }
-            };
-
-
-            foreach (var npc in npcRefs) {
-                string id = npc.Str("id");
-                float x = npc["translation"][0].Value<float>();
-                float y = npc["translation"][1].Value<float>();
-                int cellX = (int)(x / 8192);
-                int cellY = (int)(y / 8192);
-				string closestCell = "";
-				float findDist = float.MaxValue;
-				string closestSettlement = "";
-
-				for(int searchY = cellY - 1; searchY <= cellY + 1; searchY++) {
-					for (int searchX = cellX - 1; searchX <= cellX + 1; searchX++) {
-						if (cellDoors.ContainsKey((searchX, searchY))) {
-							foreach (var door in cellDoors[(searchX, searchY)]) {
-								if (!door.Item3.settlement) continue;
-								float xDist = door.Item1 - x; xDist = xDist * xDist;
-								float yDist = door.Item2 - y; yDist = yDist * yDist;
-								float dist = xDist + yDist;
-								if (dist < findDist) {
-                                    findDist = dist;
-									closestCell = mapInsteadOfList ? $"|{door.Item3.name} {(int)(Math.Sqrt(findDist))}" : door.Item3.name;
-									closestSettlement = door.Item3.merge;
-								}
-
-                            }
-						}
-					}
-                }
-				float searchDist = settlementRadiusOverrides.ContainsKey(closestSettlement) ? settlementRadiusOverrides[closestSettlement] : defaultSearchDist;
-                searchDist = searchDist * searchDist;
-
-                float xMap = (x + xAdd) * cellSize / 8192;
-                float yMap = (yAdd - y) * cellSize / 8192;
-                string extraClass = searchDist > findDist ? " settlement" : npcDisabled.Contains(id) ? " disable" : npcHostile.Contains(id) ? " hostile" : "";
-				if(mapInsteadOfList) {
-                    Console.Write($"<div class=\"npc{extraClass}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{npcs[id]}{closestCell}\"></div>"); Console.WriteLine();
-                } else {
-                    if (extraClass == " settlement") {
-                        string npcName = npcs[id];
-                        if (guardNames.Contains(npcName)) {
-                            if (!guardCounts.ContainsKey(closestSettlement)) guardCounts[closestSettlement] = 0;
-                            guardCounts[closestSettlement]++;
-                        } else {
-                            if (!npcCounts.ContainsKey(closestSettlement)) npcCounts[closestSettlement] = 0;
-                            npcCounts[closestSettlement]++;
-                        }
-                        Console.WriteLine($"{closestSettlement}|Near {closestCell}|{npcName}");
-                    }
-                }
-                //Console.WriteLine($"{npcs[id]} | {closestCell}");
-            }
-
-			Console.WriteLine();
-			foreach(string settlement in npcCounts.Keys) {
-				int guardCount = guardCounts.ContainsKey(settlement) ? guardCounts[settlement] : 0;
-				Console.WriteLine($"{settlement}|{npcCounts[settlement]}|{guardCount}");
-			}
-
-        }
-
-
-        public static void MapNpcs(string espPath) {
-            int cellSize = 64;
-            int xAdd = 42 * 8192;
-            int yAdd = 38 * 8192;
-
-			Dictionary<string, string> scriptText = new Dictionary<string, string>();
-
-			Dictionary<string, string> npcs = new Dictionary<string, string>();
-            HashSet<string> npcDisabled = new HashSet<string>();
-            HashSet<string> npcHostile = new HashSet<string>();
-
-            JArray esp = JArray.Parse(File.ReadAllText(espPath));
-            for (int i = 0; i < esp.Count; i++) {
-                var form = esp[i];
-				string formType = form["type"].Str();
-				if(formType == "Script") {
-					scriptText[form.Str("id")] = form.Str("text");
-				} else if(formType == "Npc") {
-					string formId = form["id"].Str();
-					string npcName = form["name"].Str();
-					if (npcName == "Mendyn Hereloth") Console.WriteLine(npcName);
-					npcs[formId] = npcName;
-					if(form["ai_data"]["fight"].Value<int>() > 70) npcHostile.Add(formId);
-					if (form["script"] != null) {
-						string scriptName = form.Str("script");
-						if (!scriptText.ContainsKey(scriptName)) continue;
-                        string script = scriptText[scriptName];
-						script = script.Replace("\r\n", " ");
-                        script = script.Replace("\t", " ");
-						foreach(string token in script.Split(new char[] {' ', ','}, StringSplitOptions.RemoveEmptyEntries)) {
-							if (token == "disable" || token == "Disable") {
-								npcDisabled.Add(formId);
-								break;
-							}
-						}
-					}
-				} else if (formType == "Cell") {
-                    if (form["data"]["flags"].Value<string>().IndexOf("IS_INTERIOR") != -1) continue;
-
-                    //Console.WriteLine(cellName);
-                    JArray refs = (JArray)form["references"];
-                    for (int refNum = 0; refNum < refs.Count; refNum++) {
-                        var reference = refs[refNum];
-						string refId = reference.Str("id");
-						if (!npcs.ContainsKey(refId)) continue;
-                            
-                        float x = reference["translation"][0].Value<float>();
-                        float y = reference["translation"][1].Value<float>();
-                        float xMap = (x + xAdd) * cellSize / 8192;
-                        float yMap = (yAdd - y) * cellSize / 8192;
-						string extraClass = npcDisabled.Contains(refId) ? " disable" : npcHostile.Contains(refId) ? " hostile" : "";
-                        Console.Write($"<div class=\"npc{extraClass}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{npcs[refId]}\"></div>"); Console.WriteLine();
-                        
-                    }
-                }
-            }
-        }
-
-		public static void CellListAll(string cellTypesFilePath, params string[] espPaths) {
-            Dictionary<string, string> cellTypes = new Dictionary<string, string>();
-			Dictionary<string, string> cellGroups = new Dictionary<string, string>();
-			Dictionary<string, string> cellRegions = new Dictionary<string, string>();
-            foreach (string line in File.ReadAllLines(cellTypesFilePath)) {
-                var split = line.Split('\t');
-                cellTypes[split[0]] = split[1];
-				cellGroups[split[0]] = split[2];
-				cellRegions[split[0]] = split[3];
-            }
-			HashSet<string> noDupes = new HashSet<string>();
-			foreach(string espPath in espPaths) {
-                JArray esp = JArray.Parse(File.ReadAllText(espPath));
-                for (int i = 0; i < esp.Count; i++) {
-                    var form = esp[i];
-                    string formType = form["type"].Str();
-                    if (formType == "Cell") {
-                        if (form["data"]["flags"].Value<string>().IndexOf("IS_INTERIOR") == -1) continue;
-                        string name = form.Str("name");
-						if (noDupes.Contains(name)) continue;
-						noDupes.Add(name);
-                        string type = "UNKNOWN";
-                        string group = "";
-                        string region = type;
-                        if (cellTypes.ContainsKey(name)) {
-                            type = cellTypes[name];
-                            group = cellGroups[name];
-                            region = cellRegions[name];
-                        } else {
-                            Console.WriteLine($"{name}@{type}@{group}@{region}");
-                        }
-                    }
-                }
-            }
-        }
-
-        public static void DoorsMerged(string espPath, bool merge = true) {
-            int cellSize = 64;
-            int xAdd = 42 * 8192;
-            int yAdd = 38 * 8192;
-
-
-
-			Dictionary<string, List<Float2>> mergePositions = new Dictionary<string, List<Float2>>();
-
-            Dictionary<string, string> cellTypes = new Dictionary<string, string>();
-            Dictionary<string, string> cellRegions = new Dictionary<string, string>();
-
-            Dictionary<string, string> mergeTypes = new Dictionary<string, string>();
-            Dictionary<string, string> mergeRegions = new Dictionary<string, string>();
-
-            Dictionary<string, string> mergeNames = new Dictionary<string, string>();
-
-            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypesgf.txt")) {
-                var split = line.Split('\t');
-				string name = split[0];
-                cellTypes[name] = split[1];
-				if (split[2] != "") mergeNames[name] = split[2];
-				cellRegions[name] = split[3];
-            }
-
-
-            JArray esp = JArray.Parse(File.ReadAllText(espPath));
-            for (int i = 0; i < esp.Count; i++) {
-				var cell = esp[i];
-				if (cell["type"].Value<string>() != "Cell") continue;
-                if (cell["data"]["flags"].Value<string>().IndexOf("IS_INTERIOR") == -1) continue;
-
-                string cellName = cell["name"].Value<string>();
-
-                //Console.WriteLine(cellName);
-                JArray refs = (JArray)cell["references"];
-                for (int refNum = 0; refNum < refs.Count; refNum++) {
-					var obj = refs[refNum];
-                    if (obj["destination"] != null) {
-                        if (obj["destination"]["cell"].Value<string>() == "") {
-                            //Console.WriteLine(cellName + " -> " + refs[refNum]["door_destination_cell"].Value<string>());
-                            JArray coords = (JArray)refs[refNum]["destination"]["translation"];
-                            float x = coords[0].Value<float>();
-                            float y = coords[1].Value<float>();
-                            float xMap = (x + xAdd) * cellSize / 8192;
-                            float yMap = (yAdd - y) * cellSize / 8192;
-
-                            string type = cellTypes.ContainsKey(cellName) ? cellTypes[cellName] : "unknown";
-                            string region = cellRegions.ContainsKey(cellName) ? cellRegions[cellName] : "unknown";
-
-                            if (mergeNames.ContainsKey(cellName) && merge) {
-                                string mergeName = mergeNames[cellName];
-                                if (!mergePositions.ContainsKey(mergeName)) {
-                                    mergePositions[mergeName] = new List<Float2>();
-                                    mergeTypes[mergeName] = type;
-                                    mergeRegions[mergeName] = region;
-                                }
-                                mergePositions[mergeName].Add(new Float2 { x = xMap, y = yMap });
-                            } else {
-                                Console.Write($"<div class=\"icon {type.Substring(0, 3)} {type} {region}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{cellName}\"></div>"); 
-								Console.WriteLine();
-                            }
-                        } else {
-                            //Console.WriteLine($"{cellName} -> ({xMap},{yMap})");
-                        }
-                    }
-                    
-                }
-            }
-
-			foreach(string mergeName in mergePositions.Keys) {
-				float x = 0;
-				float y = 0;
-				var positions = mergePositions[mergeName];
-
-                foreach (Float2 pos in positions) {
-					x += pos.x; y += pos.y;
-				}
-				x /= positions.Count; y /= positions.Count;
-				string type = mergeTypes[mergeName];
-				string region = mergeRegions[mergeName];
-				string markerType = type.Contains("_town") || type.Contains("_city") || type.Contains("_fort") ? "mark" : "icon";
-                Console.WriteLine($"<div class=\"{markerType} {mergeTypes[mergeName].Substring(0, 3)} {mergeTypes[mergeName]} {region}\" style=\"left:{(int)(x + 0.5)};top:{(int)(y + 0.5)};\" title=\"{mergeName}\"></div>");
-
-            }
-            //Console.WriteLine("\r\n\r\n\r\n");
-            //foreach (string cell in cells) Console.WriteLine(cell);
-
-        }
-
-        public static void MWListUnknownUnusedDoorCells(string espPath) {
-            int cellSize = 64;
-            int xAdd = 42 * 8192;
-            int yAdd = 38 * 8192;
-
-            Dictionary<string, string> cellTypes = new Dictionary<string, string>();
-
-            foreach (string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypesGF.txt")) {
-                var split = line.Split('\t');
-                cellTypes[split[0]] = split[1];
-            }
-
-            HashSet<string> cells = new HashSet<string>(cellTypes.Keys);
-
-            
-            JArray esp = JArray.Parse(File.ReadAllText(espPath));
-            for (int i = 0; i < esp.Count; i++) {
-				var form = esp[i];
-                if (form["type"].Value<string>() != "Cell") continue;
-					
-                string cellName = form["name"].Value<string>();
-                //Console.WriteLine(cellName);
-                JArray refs = (JArray)form["references"];
-                for (int refNum = 0; refNum < refs.Count; refNum++) {
-                    if (refs[refNum]["destination"] == null) continue;
-                    if (refs[refNum]["destination"]["cell"].Value<string>() == "") {
-                        if (!cellTypes.ContainsKey(cellName)) Console.WriteLine(cellName);
-                        cells.Remove(cellName);
-                        //Console.WriteLine(cellName + " -> " + refs[refNum]["door_destination_cell"].Value<string>());
-                    } else {
-                    }
-                }
-            }
-
-            Console.WriteLine("\r\n\r\n\r\n");
-            foreach (string cell in cells) Console.WriteLine(cell);
-
-        }
-
-
-        public static void MWDoors(string espPath) {
-			int cellSize = 64;
-			int xAdd = 42 * 8192;
-			int yAdd = 38 * 8192;
-
-			HashSet<string> cells = new HashSet<string>();
-			Dictionary<string, string> cellTypes = new Dictionary<string, string>();
-			foreach(string line in File.ReadAllLines(@"F:\Extracted\Morrowind\celltypes2.txt")) {
-				var split = line.Split('\t');
-				cellTypes[split[0]] = split[1];
-            }
-			
-
-			JArray esp = JArray.Parse(File.ReadAllText(espPath));
-			for(int i = 0; i < esp.Count; i++) {
-				var cell = esp[i];
-				if (cell["type"] != null && cell["type"].Value<string>() == "Cell") {
-
-                    bool isInterior = (cell["data"]["flags"].Value<int>() & 1) > 0;
-					if (!isInterior) continue;
-
-                    string cellName = cell["id"].Value<string>();
-					//Console.WriteLine(cellName);
-					JArray refs = (JArray)cell["references"];
-					for(int refNum = 0; refNum < refs.Count; refNum++) {
-						if(refs[refNum]["door_destination_coords"] != null) {
-							if(refs[refNum]["door_destination_cell"] != null) {
-								//Console.WriteLine(cellName + " -> " + refs[refNum]["door_destination_cell"].Value<string>());
-							} else {
-								JArray coords = (JArray)refs[refNum]["door_destination_coords"];
-								float x = coords[0].Value<float>();
-								float y = coords[1].Value<float>();
-								float xMap = (x + xAdd) * cellSize / 8192;
-								float yMap = (yAdd - y) * cellSize / 8192;
-
-								string type = cellTypes.ContainsKey(cellName) ? cellTypes[cellName] : "unknown";
-
-								int cellX = (int)(x/8192);
-								int cellY = (int)(y / 8192);
-								cells.Add(cellName);
-								Console.WriteLine($"<div class=\"icon {type.Substring(0,3)} {type}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};\" title=\"{cellName}\"></div>");
-								//Console.WriteLine($"{cellName} -> ({xMap},{yMap})");
-							}
-                        }
-                    }
-				}
-			}
-			//Console.WriteLine("\r\n\r\n\r\n");
-			//foreach (string cell in cells) Console.WriteLine(cell);
-
-		}
 
 		class Quest {
 			public string name;
@@ -2559,11 +750,11 @@ namespace SmallScripts {
 			public string removed;
 		}
 
-        public static void MWQuestHistory() {
+		public static void MWQuestHistory() {
 
 			Dictionary<string, Quest> quests = new Dictionary<string, Quest>();
 
-			foreach(string path in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\trhistory", "*.txt")) {
+			foreach (string path in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\trhistory", "*.txt")) {
 				string version = Path.GetFileName(path).Substring(0, 5);
 				HashSet<string> questCheck = new HashSet<string>(quests.Keys);
 
@@ -2571,7 +762,7 @@ namespace SmallScripts {
 					string[] words = line.Split('|');
 					string id = words[0];
 					questCheck.Remove(id);
-                    string name = words[1];
+					string name = words[1];
 					if (!quests.ContainsKey(id)) {
 						Quest q = new Quest();
 						q.name = name;
@@ -2580,38 +771,38 @@ namespace SmallScripts {
 						q.removed = "";
 						quests[id] = q;
 					} else {
-                        var q = quests[id];
-						if(q.name != name) {
-							if(q.name.ToLower() != name.ToLower()) q.nameHistory += $"{q.name} (until {version})";
-                            q.name = name;
+						var q = quests[id];
+						if (q.name != name) {
+							if (q.name.ToLower() != name.ToLower()) q.nameHistory += $"{q.name} (until {version})";
+							q.name = name;
 						}
 						if (q.removed != "") q.removed = "";
-                    }
-					foreach(string missingQuest in questCheck) {
+					}
+					foreach (string missingQuest in questCheck) {
 						if (quests[missingQuest].removed == "") quests[missingQuest].removed = version;
 					}
-                }
+				}
 
 
 
 			}
 
-            foreach (string id in quests.Keys) {
-                var q = quests[id];
+			foreach (string id in quests.Keys) {
+				var q = quests[id];
 				int i = q.name.IndexOf(':');
 				string category = i == -1 ? "" : q.name.Substring(0, i);
 				//if(q.added == "22.11" || q.removed == "22.11")
-                Console.WriteLine($"{q.added}|{q.removed}|{id}|{category}|{q.name}|{q.nameHistory}");
-            }
-        }
+				Console.WriteLine($"{q.added}|{q.removed}|{id}|{category}|{q.name}|{q.nameHistory}");
+			}
+		}
 
-        public static void MWQuests(params string[] espPaths) {
+		public static void MWQuests(params string[] espPaths) {
 			string unnamed = "Unnamed";
 
 			Dictionary<string, string> questNames = new Dictionary<string, string>();
 			Dictionary<string, string> questFiles = new Dictionary<string, string>();
 
-			foreach(string espPath in espPaths) {
+			foreach (string espPath in espPaths) {
 				string file = Path.GetFileNameWithoutExtension(espPath);
 				Console.WriteLine(espPath);
 				JArray esp = JArray.Parse(File.ReadAllText(espPath));
@@ -2621,7 +812,7 @@ namespace SmallScripts {
 						string type = esp[i]["dialogue_type"].Value<string>();
 						if (type == "Journal") {
 							string id = esp[i]["id"].Value<string>();
-							if(!questFiles.ContainsKey(id)) questFiles[id] = file;
+							if (!questFiles.ContainsKey(id)) questFiles[id] = file;
 							if (!questNames.ContainsKey(id) || questNames[id] == unnamed) {
 								string name = unnamed;
 								string zero = null;
@@ -2644,200 +835,20 @@ namespace SmallScripts {
 					i++;
 				}
 			}
-            using (TextWriter w = new StreamWriter(File.Open(espPaths[0] + "_quests.txt", FileMode.Create))) {
-                foreach (string quest in questNames.Keys) w.WriteLine(quest + "|" + questNames[quest]);
-            }
-
-
-        }
-
-        public static void MWBooks(string espPath) {
-			JArray esp = JArray.Parse(File.ReadAllText(espPath));
-			for (int i = 0; i < esp.Count; i++) {
-				if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Book") {
-					string id = esp[i]["id"].Value<string>();
-					string name = esp[i]["name"].Value<string>();
-					string icon = esp[i]["icon"].Value<string>();
-					Console.WriteLine($"{name}|{id}|{icon}");
-					//if (id == "") id = "Wilderness";
-					//string region = esp[i]["region"] != null ? esp[i]["region"].Value<string>() : "no_region";
-					//int x = esp[i]["data"]["grid"][0].Value<int>();
-					//int y = esp[i]["data"]["grid"][1].Value<int>();
-				}
+			using (TextWriter w = new StreamWriter(File.Open(espPaths[0] + "_quests.txt", FileMode.Create))) {
+				foreach (string quest in questNames.Keys) w.WriteLine(quest + "|" + questNames[quest]);
 			}
 
-		}
 
-
-		//ListMWRefs2(2000, @"F:\Extracted\Tools\morrowind.json", @"F:\Extracted\Tools\tribunal.json", @"F:\Extracted\Tools\bloodmoon.json", @"F:\Extracted\Tools\trmainland.json", @"F:\Extracted\Tools\trpreview.json");
-		//ListMWRefs("meshes.txt", @"F:\Extracted\Tools\morrowind.json", @"F:\Extracted\Tools\tribunal.json", @"F:\Extracted\Tools\bloodmoon.json");
-		//ListMWRefs("meshestr.txt", @"F:\Extracted\Tools\morrowind.json", @"F:\Extracted\Tools\tribunal.json", @"F:\Extracted\Tools\bloodmoon.json", @"F:\Extracted\Tools\tamrieldata.json", @"F:\Extracted\Tools\trmainland.json", @"F:\Extracted\Tools\trpreview.json");
-		//MWIDMeshLookup(@"F:\Extracted\Tools\morrowind.json", @"F:\Extracted\Tools\tribunal.json", @"F:\Extracted\Tools\bloodmoon.json", @"F:\Extracted\Tools\tamrieldata.json", @"F:\Extracted\Tools\trmainland.json", @"F:\Extracted\Tools\trpreview.json");
-
-		static Dictionary<string, string> MWIDMeshLookup(params JArray[] esps) {
-			string[] meshTypesArray = new string[] { "Static", "Door", "MiscItem", "Weapon", "Container", "Light", "Armor", "Clothing", "Activator", "Ingredient", "Book", "Alchemy" };
-			HashSet<string> meshTypes = new HashSet<string>(); foreach (string type in meshTypesArray) meshTypes.Add(type);
-
-			Dictionary<string, string> lookup = new Dictionary<string, string>();
-			foreach (JArray esp in esps) {
-				for (int i = 0; i < esp.Count; i++) {
-					string type = esp[i]["type"] != null ? esp[i]["type"].Value<string>() : "";
-					if (meshTypes.Contains(type)) {
-						string mesh = esp[i]["mesh"] != null ? esp[i]["mesh"].Value<string>() : "";
-						if (mesh != "") lookup[esp[i]["id"].Value<string>()] = mesh.ToLower();
-					}
-				}
-			}
-			return lookup;
 		}
 
 
 
 
-		static void ListMWRefs(string outFileName, params string[] espPaths) {
-			Dictionary<string, int> refCounts = new Dictionary<string, int>();
-
-			JArray[] esps = new JArray[espPaths.Length];
-			for (int i = 0; i < esps.Length; i++) {
-				Console.WriteLine(Path.GetFileNameWithoutExtension(espPaths[i]));
-				esps[i] = JArray.Parse(File.ReadAllText(espPaths[i]));
-			}
-
-			Dictionary<string, string> meshLookup = MWIDMeshLookup(esps);
-			Console.WriteLine("Gathered meshes");
-
-			//gather refs
-			for (int espIndex = 0; espIndex < esps.Length; espIndex++) {
-				for (int i = 0; i < esps[espIndex].Count; i++) {
-					if (esps[espIndex][i]["type"] != null && esps[espIndex][i]["type"].Value<string>() == "Cell") {
-						//string id = esps[espIndex][i]["id"].Value<string>();
-						//if (id == "") id = "Wilderness";
-						//string region = esps[espIndex][i]["region"] != null ? esps[espIndex][i]["region"].Value<string>() : "no_region";
-						//int x = esps[espIndex][i]["data"]["grid"][0].Value<int>();
-						//int y = esps[espIndex][i]["data"]["grid"][1].Value<int>();
-						bool isInterior = (esps[espIndex][i]["data"]["flags"].Value<int>() & 1) > 0;
-						if (!isInterior) {
-							//Console.WriteLine($"{id}, {region}, {x},{y}");
-							for (int refIndex = 0; refIndex < esps[espIndex][i]["references"].Count(); refIndex++) {
-								string refId = esps[espIndex][i]["references"][refIndex]["id"].Value<string>();
-								if (!refCounts.ContainsKey(refId)) refCounts[refId] = 1;
-								else refCounts[refId] = refCounts[refId] + 1;
-							}
-						}
-					}
-				}
-			}
-
-			TextWriter writer = new StreamWriter(File.Open(outFileName, FileMode.Create));
-			Dictionary<string, int> meshCounts = new Dictionary<string, int>();
-			foreach (string id in refCounts.Keys) {
-				if (meshLookup.ContainsKey(id)) {
-					string mesh = meshLookup[id].ToLower();
-					if (!meshCounts.ContainsKey(mesh)) meshCounts[mesh] = refCounts[id];
-					else meshCounts[mesh] = meshCounts[mesh] + refCounts[id];
-					//writer.WriteLine($"{id}|{meshLookup[id]}|{refCounts[id]}");
-				}
-				//else Console.WriteLine($"{id}: {refCounts[id]}");
-			}
-			foreach (string mesh in meshCounts.Keys) {
-				writer.WriteLine($"{mesh}|{meshCounts[mesh]}");
-			}
-			writer.Flush();
-			writer.Close();
-
-		}
-
-
-		static void MWIDMeshLookup(params string[] espPaths) {
-
-			string[] meshTypesArray = new string[] { "Static", "Door", "MiscItem", "Weapon", "Container", "Light", "Armor", "Clothing", "Activator", "Ingredient", "Book", "Alchemy" };
-			HashSet<string> meshTypes = new HashSet<string>(); foreach (string type in meshTypesArray) meshTypes.Add(type);
-
-			TextWriter w = new StreamWriter(File.Open("idlookup.txt", FileMode.Create));
-
-			foreach (string espPath in espPaths) {
-
-				Console.Write(Path.GetFileNameWithoutExtension(espPath));
-				JArray esp = JArray.Parse(File.ReadAllText(espPath));
-				Console.WriteLine(" parsed");
-
-				for (int i = 0; i < esp.Count; i++) {
-					string type = esp[i]["type"] != null ? esp[i]["type"].Value<string>() : "";
-					if (meshTypes.Contains(type)) {
-						string mesh = esp[i]["mesh"] != null ? esp[i]["mesh"].Value<string>() : "";
-						if (mesh != "") w.WriteLine(esp[i]["id"].Value<string>() + "|" + mesh.ToLower());
-					}
-				}
-			}
-			w.Flush();
-			w.Close();
-		}
 
 
 
-		static void ListMWRefs2(int heatmapMax, params string[] espPaths) {
 
-
-            Dictionary<string, (int, int)> meshes = new Dictionary<string, (int, int)>();
-			foreach (string line in File.ReadAllLines(@"E:\Anna\Desktop\io_scene_mw\lib\meshes.txt")) {
-				string[] words = line.Split('|');
-				meshes[words[0]] = (int.Parse(words[1]), int.Parse(words[2]));
-			}
-
-			Dictionary<string, string> idLookup = new Dictionary<string, string>();
-			foreach (string line in File.ReadAllLines(@"F:\Anna\Visual Studio\SmallScripts\SmallScripts\bin\x64\Debug\idlookup.txt")) {
-				string[] words = line.Split('|');
-				idLookup[words[0]] = words[1];
-			}
-
-			int imageSize = 128;
-			byte[] imageData = new byte[imageSize * imageSize];
-
-			foreach (string espPath in espPaths) {
-
-				Console.Write(Path.GetFileNameWithoutExtension(espPath));
-				JArray esp = JArray.Parse(File.ReadAllText(espPath));
-				Console.WriteLine(" parsed");
-
-				for (int i = 0; i < esp.Count; i++) {
-					if (esp[i]["type"] != null && esp[i]["type"].Value<string>() == "Cell") {
-
-						string id = esp[i]["id"].Value<string>();
-						if (id == "") id = "Wilderness";
-
-						string region = esp[i]["region"] != null ? esp[i]["region"].Value<string>() : "Null Region";
-
-						int x = esp[i]["data"]["grid"][0].Value<int>();
-						int y = esp[i]["data"]["grid"][1].Value<int>();
-
-						bool isInterior = (esp[i]["data"]["flags"].Value<int>() & 1) > 0;
-						if (isInterior) continue;
-
-						int meshesCount = 0;
-						int triShapeCount = 0;
-
-						for (int refIndex = 0; refIndex < esp[i]["references"].Count(); refIndex++) {
-							string refId = esp[i]["references"][refIndex]["id"].Value<string>();
-							if (!idLookup.ContainsKey(refId) || !meshes.ContainsKey(idLookup[refId])) continue;
-							meshesCount++;
-							triShapeCount += meshes[idLookup[refId]].Item1;
-						}
-
-						byte col = (byte)(Math.Min(triShapeCount * 256 / heatmapMax, 254) + 1);
-						int pixel = (x + imageSize / 2) % imageSize + (y * -1 + imageSize / 2) * imageSize;
-						if (pixel >= 0 && pixel < imageData.Length && col > imageData[pixel]) {
-							imageData[pixel] = col;
-
-							Console.WriteLine($"{x},{y}|{id}|{region}|{meshesCount}|{triShapeCount}");
-						}
-					}
-				}
-			}
-
-			MagickReadSettings settings = new MagickReadSettings() { Format = MagickFormat.Gray, Width = imageSize, Height = imageSize };
-			MagickImage image = new MagickImage(imageData, settings);
-
-			image.Write($"heatmap_{heatmapMax}.png");
-		}
 	}
+
 }

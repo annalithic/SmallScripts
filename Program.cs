@@ -133,8 +133,10 @@ namespace SmallScripts {
 
 
         static void Main(string[] args) {
+            TES3.PopulationNew(@"E:\Extracted\Morrowind\trhistory\26.07.13.TR_Mainland_DEV.json"); return;
 
-			TES3.CellGraph(@"E:\Extracted\Morrowind\trhistory\26.07.13.TR_Mainland_DEV.json"); return;
+
+            TES3.CellGraph(@"E:\Extracted\Morrowind\trhistory\26.07.13.TR_Mainland_DEV.json"); return;
 
             TES3.ListCellsNew(@"E:\Extracted\Morrowind\trhistory\26.07.13.TR_Mainland_DEV.json"); return;
 
