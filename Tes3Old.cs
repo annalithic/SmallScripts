@@ -1122,6 +1122,9 @@ namespace SmallScripts {
             Console.WriteLine("\r\n\r\n\r\n");
         }
 
+        struct Vector2 {
+            public float x, y;
+        }
         public static void MapFlora(params string[] espPaths) {
             int cellSize = 64;
             int xAdd = 42 * 8192;

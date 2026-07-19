@@ -133,12 +133,20 @@ namespace SmallScripts {
 
 
         static void Main(string[] args) {
-            TES3.PopulationNew(@"E:\Extracted\Morrowind\trhistory\26.07.13.TR_Mainland_DEV.json"); return;
+
+            TES3.PopulationNew(TES3.PopulationDumpMode.GroupPopulationMap, @"E:\Extracted\Morrowind\NEW_CELL_DATA\vanilla", @"E:\Extracted\Morrowind\Bloodmoon.json"); return;
+
+            TES3.ListCellsNew(@"E:\Extracted\Morrowind\Bloodmoon.json"); return;
+
+            //TES3.CellGraph(@"E:\Extracted\Morrowind\morrowind.json"); return;
+            //TES3.ListCellsNew(@"E:\Extracted\Morrowind\morrowind.json"); return;
+            TES3.PopulationNew(TES3.PopulationDumpMode.GroupPopulationMap, @"E:\Extracted\Morrowind\NEW_CELL_DATA\vanilla", @"E:\Extracted\Morrowind\morrowind.json");
+			Console.WriteLine();
+            TES3.PopulationNew(TES3.PopulationDumpMode.GroupPopulationMap, @"E:\Extracted\Morrowind\NEW_CELL_DATA", @"E:\Extracted\Morrowind\trhistory\26.07.13.TR_Mainland_DEV.json"); return;
 
 
-            TES3.CellGraph(@"E:\Extracted\Morrowind\trhistory\26.07.13.TR_Mainland_DEV.json"); return;
+            
 
-            TES3.ListCellsNew(@"E:\Extracted\Morrowind\trhistory\26.07.13.TR_Mainland_DEV.json"); return;
 
 
             TES3.ListRegions(
@@ -163,11 +171,11 @@ namespace SmallScripts {
 
             GIMapCompose(@"E:\Extracted\GI\6.6\map"); return;
 
-            TES3.DoorsMerged(@"E:\Extracted\Morrowind\26.05.21.TR_Mainland_DEV.json", false); return;
+            //TES3.DoorsMerged(@"E:\Extracted\Morrowind\26.05.21.TR_Mainland_DEV.json", false); return;
 
-            TES3.UESPQuestRead(); return;
-            TES3.MWQuestHistory(); return;
-            TES3.MWQuests(@"E:\Extracted\Morrowind\26.03.11.TR_Mainland_DEV.json"); return;
+            //TES3.UESPQuestRead(); return;
+            //TES3.MWQuestHistory(); return;
+            //TES3.MWQuests(@"E:\Extracted\Morrowind\26.03.11.TR_Mainland_DEV.json"); return;
 
 
 
@@ -176,76 +184,76 @@ namespace SmallScripts {
 
 
 
-            TES3.ListRegions(@"E:\Extracted\Morrowind\Morrowind.json",
-                @"E:\Extracted\Morrowind\trdata.json");
-			return;
+   //         TES3.ListRegions(@"E:\Extracted\Morrowind\Morrowind.json",
+   //             @"E:\Extracted\Morrowind\trdata.json");
+			//return;
 
-			TES3.MapFlora(
-				@"E:\Extracted\Morrowind\Morrowind.json",
-                @"E:\Extracted\Morrowind\Tribunal.json",
-                @"E:\Extracted\Morrowind\Bloodmoon.json",
-                @"E:\Extracted\Morrowind\trdata.json",
-                @"E:\Extracted\Morrowind\trhistory\25.08.TR_Mainland.esm.json"
+			//TES3.MapFlora(
+			//	@"E:\Extracted\Morrowind\Morrowind.json",
+   //             @"E:\Extracted\Morrowind\Tribunal.json",
+   //             @"E:\Extracted\Morrowind\Bloodmoon.json",
+   //             @"E:\Extracted\Morrowind\trdata.json",
+   //             @"E:\Extracted\Morrowind\trhistory\25.08.TR_Mainland.esm.json"
 
-                ); return;
+   //             ); return;
 
 
-            TES3.MapNpcsNew(@"E:\Extracted\Morrowind\trdata.json", @"E:\Extracted\Morrowind\trhistory\25.08.TR_Mainland.esm.json"); return;
+   //         TES3.MapNpcsNew(@"E:\Extracted\Morrowind\trdata.json", @"E:\Extracted\Morrowind\trhistory\25.08.TR_Mainland.esm.json"); return;
 
 
 
             //TES3.MWQuests(@"E:\Extracted\Morrowind\trhistory\22.11.TR_Mainland.esm.json"); return;
             
 
-			foreach(string trpath in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\trhistory", "*.json")) {
-				TES3.MWQuests(trpath);
-			}
-			return;
+			//foreach(string trpath in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\trhistory", "*.json")) {
+			//	TES3.MWQuests(trpath);
+			//}
+			//return;
 
-            TES3.DoorsMerged(@"E:\Extracted\Morrowind\tr_ow_oct25.json", false);
-            TES3.DoorsMerged(@"E:\Extracted\Morrowind\tr_ss_oct25.json", false); 
-			return;
-
-
-            HollowKnight.ReadScene();
-			return;
+   //         //TES3.DoorsMerged(@"E:\Extracted\Morrowind\tr_ow_oct25.json", false);
+   //         //TES3.DoorsMerged(@"E:\Extracted\Morrowind\tr_ss_oct25.json", false); 
+			//return;
 
 
-            //TES3.DoorsMerged(@"E:\Extracted\Morrowind\WBM.json", false);
-            //TES3.DoorsMerged(@"E:\Extracted\Morrowind\CM.json", false);
-            //TES3.DoorsMerged(@"E:\Extracted\Morrowind\PS.json", false); return;
+   //         HollowKnight.ReadScene();
+			//return;
 
 
-            TES3.TES3StaticList3(
-                @"E:\Extracted\Morrowind\Morrowind.json",
-                @"E:\Extracted\Morrowind\Tribunal.json",
-                @"E:\Extracted\Morrowind\Bloodmoon.json",
-                @"E:\Extracted\Morrowind\TD.json",
-                @"E:\Extracted\Morrowind\TR_MERGE_25_07_30.json"
-                ); return;
-
-            TES3.CreateBlankDistMeshes(@"C:\Games\MorrowindMods\Tamriel Data\00 Data Files\meshes", @"C:\Games\MorrowindMods\blankdist_tr\meshes");
-            TES3.CreateBlankDistMeshes(@"C:\Games\MorrowindMods\TamrielDataMain\00 Data Files\meshes", @"C:\Games\MorrowindMods\blankdist_tr\meshes");
-            TES3.CreateBlankDistMeshes(@"E:\Extracted\Morrowind\vanilla\meshes", @"C:\Games\MorrowindMods\blankdist\meshes"); return;
-            return;
-            TES3.MWDoors(@"E:\Extracted\Morrowind\TR_Mainland.json", 7.9375f, -46.125f, 0.9375f); return; //sadrathim
-            TES3.MWDoors(@"E:\Extracted\Morrowind\TR_Mainland.json", 2.8125f, -39.1875f, 1.0f); return; //othmura
-            TES3.MWDoors(@"E:\Extracted\Morrowind\TR_Mainland.json", 0.5625f, -44.3125f, 1.5f); return; //hlerynhul
-            TES3.MWDoors(@"E:\Extracted\Morrowind\TR_Mainland.json", 4.75f, -52, 3.5f); return; //naris
+   //         //TES3.DoorsMerged(@"E:\Extracted\Morrowind\WBM.json", false);
+   //         //TES3.DoorsMerged(@"E:\Extracted\Morrowind\CM.json", false);
+   //         //TES3.DoorsMerged(@"E:\Extracted\Morrowind\PS.json", false); return;
 
 
+   //         TES3.TES3StaticList3(
+   //             @"E:\Extracted\Morrowind\Morrowind.json",
+   //             @"E:\Extracted\Morrowind\Tribunal.json",
+   //             @"E:\Extracted\Morrowind\Bloodmoon.json",
+   //             @"E:\Extracted\Morrowind\TD.json",
+   //             @"E:\Extracted\Morrowind\TR_MERGE_25_07_30.json"
+   //             ); return;
 
-            //MapGenieMontage2(@"E:\Extracted\ACRED\tiles"); return;
-            //MapGenieRequest(); return;
-            TES3.TES3QuestInfo(@"E:\Extracted\Morrowind\TR_Mainland.json"); return;
-            TES3.DoorsMerged(@"E:\Extracted\Morrowind\TR_Mainland.json", true); return;
-            TES3.MWListUnknownUnusedDoorCells(@"E:\Extracted\Morrowind\TR_Mainland.json"); return;
-            //TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json"); return;
-            //TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 5.125f, -34.125f, 0.75f); return; //idathren
-            //TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 0.875f, -32.5f, 1.75f); return; //hlan oek
-            //TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 4.5f, -28.5f, 3f, 2f); return; //almas thirr
-            //TES3.MWDoors(@"F:\Extracted\BGS\tr_mainland.json", 16.75f, 14.5f, 2); return; //Firewatch
-            //TES3.MWDoors(@"F:\Extracted\BGS\tr_mainland.json", 24.75f, 0.75f, 1); return; //Helnim
+   //         TES3.CreateBlankDistMeshes(@"C:\Games\MorrowindMods\Tamriel Data\00 Data Files\meshes", @"C:\Games\MorrowindMods\blankdist_tr\meshes");
+   //         TES3.CreateBlankDistMeshes(@"C:\Games\MorrowindMods\TamrielDataMain\00 Data Files\meshes", @"C:\Games\MorrowindMods\blankdist_tr\meshes");
+   //         TES3.CreateBlankDistMeshes(@"E:\Extracted\Morrowind\vanilla\meshes", @"C:\Games\MorrowindMods\blankdist\meshes"); return;
+   //         return;
+   //         TES3.MWDoors(@"E:\Extracted\Morrowind\TR_Mainland.json", 7.9375f, -46.125f, 0.9375f); return; //sadrathim
+   //         TES3.MWDoors(@"E:\Extracted\Morrowind\TR_Mainland.json", 2.8125f, -39.1875f, 1.0f); return; //othmura
+   //         TES3.MWDoors(@"E:\Extracted\Morrowind\TR_Mainland.json", 0.5625f, -44.3125f, 1.5f); return; //hlerynhul
+   //         TES3.MWDoors(@"E:\Extracted\Morrowind\TR_Mainland.json", 4.75f, -52, 3.5f); return; //naris
+
+
+
+   //         //MapGenieMontage2(@"E:\Extracted\ACRED\tiles"); return;
+   //         //MapGenieRequest(); return;
+   //         TES3.TES3QuestInfo(@"E:\Extracted\Morrowind\TR_Mainland.json"); return;
+   //         TES3.DoorsMerged(@"E:\Extracted\Morrowind\TR_Mainland.json", true); return;
+   //         TES3.MWListUnknownUnusedDoorCells(@"E:\Extracted\Morrowind\TR_Mainland.json"); return;
+   //         //TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json"); return;
+   //         //TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 5.125f, -34.125f, 0.75f); return; //idathren
+   //         //TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 0.875f, -32.5f, 1.75f); return; //hlan oek
+   //         //TES3.MWDoors(@"E:\Extracted\Morrowind\trmainland.json", 4.5f, -28.5f, 3f, 2f); return; //almas thirr
+   //         //TES3.MWDoors(@"F:\Extracted\BGS\tr_mainland.json", 16.75f, 14.5f, 2); return; //Firewatch
+   //         //TES3.MWDoors(@"F:\Extracted\BGS\tr_mainland.json", 24.75f, 0.75f, 1); return; //Helnim
 
 
 
@@ -262,30 +270,30 @@ namespace SmallScripts {
 			//PoE.LeagueWeeks(); return;
 
 			//TES3.MWListUnknownUnusedDoorCells(@"E:\Extracted\Morrowind\tes3conv_new\TR_24_05_21.json"); return;
-            TES3.DoorsMerged(@"E:\Extracted\Morrowind\tes3conv_new\TR_24_06_17.json", true); return;
+   //         TES3.DoorsMerged(@"E:\Extracted\Morrowind\tes3conv_new\TR_24_06_17.json", true); return;
 
-            //TES3.DoorsListNew(@"E:\Extracted\Morrowind\tes3conv_new\TR_24_05_21.json");
-            //TES3.DoorsListNew(@"E:\Extracted\Morrowind\tes3conv\NEWmergeTR.json"); return;
+   //         //TES3.DoorsListNew(@"E:\Extracted\Morrowind\tes3conv_new\TR_24_05_21.json");
+   //         //TES3.DoorsListNew(@"E:\Extracted\Morrowind\tes3conv\NEWmergeTR.json"); return;
 
-            TES3.LodMeshes3(); return;
-
-
-
-            TES3.TES3StaticList2(@"E:\Extracted\Morrowind\tes3conv\MWMerge.json", @"E:\Extracted\Morrowind\tes3conv\TR-22-02-24.json"); return;
-
-
-            TES3.MeshTextures("dwe"); return;
-            //TES3.DoorsMerged(@"E:\Extracted\Morrowind\trmainland.json"); return;
-
-            //TES3.TES3QuestInfo(@"E:\Extracted\Morrowind\bloodmoon.json"); return;
-
-            //TES3.TES3QuestInfo(@"E:\Extracted\Morrowind\tes3conv\TR_Mainland.json"); return;
+   //         TES3.LodMeshes3(); return;
 
 
 
-			List<string> esps = new List<string>() { @"E:\Extracted\Morrowind\morrowind.json", @"E:\Extracted\Morrowind\bloodmoon.json" };
-			foreach (string path in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\tes3conv", "*.json")) esps.Add(path);
-			TES3.TES3StaticList(esps.ToArray()); return;
+   //         TES3.TES3StaticList2(@"E:\Extracted\Morrowind\tes3conv\MWMerge.json", @"E:\Extracted\Morrowind\tes3conv\TR-22-02-24.json"); return;
+
+
+   //         TES3.MeshTextures("dwe"); return;
+   //         //TES3.DoorsMerged(@"E:\Extracted\Morrowind\trmainland.json"); return;
+
+   //         //TES3.TES3QuestInfo(@"E:\Extracted\Morrowind\bloodmoon.json"); return;
+
+   //         //TES3.TES3QuestInfo(@"E:\Extracted\Morrowind\tes3conv\TR_Mainland.json"); return;
+
+
+
+			//List<string> esps = new List<string>() { @"E:\Extracted\Morrowind\morrowind.json", @"E:\Extracted\Morrowind\bloodmoon.json" };
+			//foreach (string path in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\tes3conv", "*.json")) esps.Add(path);
+			//TES3.TES3StaticList(esps.ToArray()); return;
 
 
             string filename2 = @"F:\Anna\Desktop\3waybillboard2.nif";
@@ -304,9 +312,9 @@ namespace SmallScripts {
             }
             return;
 
-            TES3.OpenMWMapCombine(@"F:\Extracted\Morrowind\MAPSTRNEWSMALL\maps", 128); return;
+            //TES3.OpenMWMapCombine(@"F:\Extracted\Morrowind\MAPSTRNEWSMALL\maps", 128); return;
 
-            foreach (string path in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\tes3conv", "*.json")) TES3.MWDoors(path); return;
+            //foreach (string path in Directory.EnumerateFiles(@"E:\Extracted\Morrowind\tes3conv", "*.json")) TES3.MWDoors(path); return;
 
 
             NumberGrid(); return;
@@ -548,7 +556,7 @@ namespace SmallScripts {
 			//TES3.TES3IntCellResizeTest();
 			//TES3.TES3ListInts(@"F:\Extracted\BGS\morrowind.json"); return;
 
-			TES3.MWRegionCreateMaps(@"F:\Extracted\BGS\morrowind.json"); return;
+			//TES3.MWRegionCreateMaps(@"F:\Extracted\BGS\morrowind.json"); return;
 			//TES3.TES3LocalMapCombine(1024, 3, -); return;
 			//PoE.PoeUIImages(@"F:\Extracted\PathOfExile\3.20.Sanctum\ROOT"); return;
 
@@ -557,13 +565,13 @@ namespace SmallScripts {
 
 
 			//TES3.MWMapResize(40, 64); return;
-			TES3.MWRegionDoors(@"F:\Extracted\BGS\tr_mainland.json"); return;
+			//TES3.MWRegionDoors(@"F:\Extracted\BGS\tr_mainland.json"); return;
 
 
-			TES3.MWMapCombine(); return;
+			//TES3.MWMapCombine(); return;
 
 
-			TES3.MWDoors(@"F:\Extracted\BGS\tr_mainland.json"); return;
+			//TES3.MWDoors(@"F:\Extracted\BGS\tr_mainland.json"); return;
 
 
 			PoE.LeagueWeeks(); return;

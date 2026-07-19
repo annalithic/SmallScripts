@@ -130,28 +130,51 @@ namespace SmallScripts {
 				return new Vector2(v1.x + v2.x, v1.y + v2.y);
 			}
 
-			public static Vector2 operator /(Vector2 v1, int div) {
+            public static Vector2 operator -(Vector2 v1, Vector2 v2) {
+                return new Vector2(v1.x - v2.x, v1.y - v2.y);
+            }
+
+            public static Vector2 operator /(Vector2 v1, int div) {
 				return new Vector2(v1.x / div, v1.y / div);
 			}
 
 			public override string ToString() {
 				return $"({(long)x},{(long)y})";
 			}
-		}
+
+			public (int, int) ToCell() {
+				return ((int)(x/8192), (int)(y/8192));
+			}
+
+			public float LengthSquared() {
+				return x*x + y*y;
+			}
+
+			public Vector2 MapPosition() {
+                int cellSize = 64;
+                int xAdd = 39 * 8192;
+                int yAdd = 34 * 8192;
+				return new Vector2((x + xAdd) * cellSize / 8192, (yAdd - y) * cellSize / 8192);
+
+            }
+        }
 
 		class GroupInfo {
 			public bool ignore;
 			public string ignoreReason;
 			public string gameplayType;
-			public string type;
+			public string owner;
+			public string tileset;
 			public string name;
 			public string parent;
 			public string regions;
 			public string district;
+			public float npcSearchOverride;
 
 			//not taken from premade data
 			public int cellCount;
 			public int npcCount;
+			public int guardCount;
 			public int hostileCount;
 			public bool onlyNpcsAreEnslaved;
 
@@ -163,7 +186,7 @@ namespace SmallScripts {
 				doorPositions = new HashSet<Vector2>();
 			}
 
-			Vector2 MergePosition() {
+			public Vector2 MergePosition() {
 				Vector2 average = new Vector2();
 				foreach (Vector2 pos in doorPositions) {
 					average += pos;
@@ -178,43 +201,48 @@ namespace SmallScripts {
 				if (doorPositions.Count > 0) {
 					position = (MergePosition() / 8192).ToString();
 				}
-				return $"{ignoreText}@{ignoreReason}@{gameplayType}@{type}@{name}@{cellCount}@{regions}@{district}@{parent}@{npcCount}@{hostileCount}@{position}";
+				return $"{ignoreText}@{ignoreReason}@{gameplayType}@{owner}@{tileset}@{name}@{cellCount}@{regions}@{district}@{parent}@{npcSearchOverride}@{npcCount}@{guardCount}@{hostileCount}@{position}";
 			}
 
 			public string MapPopulationCircle() {
-				int cellSize = 64;
-				int xAdd = 42 * 8192;
-				int yAdd = 38 * 8192;
 
-				var position = MergePosition();
+				var position = MergePosition().MapPosition();
+                if (district == "Solstheim") position += new Vector2(448, -384);
 
-				float xMap = (position.x + xAdd) * cellSize / 8192;
-				float yMap = (yAdd - position.y) * cellSize / 8192;
+                int friendlyCount = npcCount + guardCount;
 
+				float sizeGrowthMult = 4.5f;
+				int size = 11 - (int)sizeGrowthMult + (int)(Math.Sqrt(friendlyCount) * sizeGrowthMult);
 
-				float sizeGrowthMult = 3.2f;
-				int size = 10 - (int)sizeGrowthMult + (int)(Math.Sqrt(npcCount) * sizeGrowthMult);
+				float textGrowthMult = 1.3f;
+				int textSize = 8 - (int)textGrowthMult + (int)(Math.Sqrt(friendlyCount) * textGrowthMult);
 
-				float textGrowthMult = 1;
-				int textSize = 8 - (int)textGrowthMult + (int)(Math.Sqrt(npcCount) * textGrowthMult);
-
-				string count = npcCount.ToString();
+				string count = friendlyCount.ToString();
 				string shape = "circle";
 				string sizeString = $"width:{size}px;height:{size}px;";
 
-				if (npcCount <= 5) {
+				if (friendlyCount <= 4) {
 					count = "";
 					shape = "diamond";
 					sizeString = "";
 				}
-				string titleText = hostileCount > 0 ? $"{name}: {npcCount} + {hostileCount} Hostiles" : $"{name}: {npcCount}";
 
-				return $"<div class=\"{shape} {gameplayType}\" style=\"left:{(int)(xMap + 0.5)};top:{(int)(yMap + 0.5)};{sizeString}font-size:{textSize}pt\" title=\"{titleText}\">{count}</div>";
+				if (owner != "") shape = shape + " " + owner;
+				StringBuilder t = new StringBuilder($"{name}: {npcCount} NPC"); 
+				if (npcCount > 1) t.Append("s");
+				if (guardCount > 0) {
+					t.Append($" + {guardCount} Guard"); 
+					if (guardCount > 1) t.Append("s");
+				}
+
+                return $"<div class=\"{shape} {gameplayType}\" style=\"left:{(int)(position.x + 0.5)};top:{(int)(position.y + 0.5)};{sizeString}font-size:{textSize}pt\" title=\"{t.ToString()}\">{count}</div>";
 			}
 		}
 
 		static string GetCellGroup(string s, Dictionary<string, GroupInfo> groupInfo = null) {
-			string g = s.Split(',', ':').FirstOrDefault();
+			var split = s.Split(',', ':');
+            string g = split.FirstOrDefault();
+			if (g == "Solstheim" && split.Length > 1) g = split[1].Trim();
 			if (groupInfo != null) {
 				if (!groupInfo.ContainsKey(g)) Console.WriteLine($"GROUP MISSING: {g}");
 				else while (groupInfo.ContainsKey(g) && groupInfo[g].parent != "") {
@@ -224,22 +252,30 @@ namespace SmallScripts {
 			return g;
 		}
 
-		public static void PopulationNew(params string[] espPaths) {
+		public enum PopulationDumpMode {
+			DuplicateNpcs,
+			GroupTable,
+			GroupPopulationMap,
+			ExteriorNpcMap
+		}
+		public static void PopulationNew(PopulationDumpMode mode, string extraDataFolder, params string[] espPaths) {
 
 			var groupInfo = new Dictionary<string, GroupInfo>();
 
-			foreach (string line in File.ReadAllLines(@"E:\Extracted\Morrowind\NEW_CELL_DATA\groups2.txt")) {
+			foreach (string line in File.ReadAllLines(Path.Combine(extraDataFolder,"groups.txt"))) {
 				if (line.StartsWith("HEADER")) continue;
 				var words = line.Split('\t');
 				groupInfo[words[5]] = new GroupInfo {
 					ignore = words[0] == "Ignore",
 					ignoreReason = words[1],
 					gameplayType = words[2],
-					type = words[4],
+					owner = words[3],
+					tileset = words[4],
 					name = words[5],
 					regions = words[7],
 					district = words[8],
-					parent = words[9]
+					parent = words[9],
+					npcSearchOverride = words[10] == "" ? -1 : float.Parse(words[10])
 				};
 			}
 
@@ -249,6 +285,27 @@ namespace SmallScripts {
 			var npcs = new HashSet<string>();
 			var npcsHostile = new HashSet<string>();
 			var slaveIds = new HashSet<string>();
+
+			//exterior npc finding - copying old method, look at these fucked up types
+			var doorRefs = new Dictionary<(int, int), List<(Vector2 pos, string cell)>>();
+			var npcRefs = new List<(Vector2 pos, string id)>();
+
+			//duplicate/guard detection
+			var npcGuardNames = new HashSet<string>();
+			var npcNameIgnore = new HashSet<string>();
+			var npcIdIgnore = new HashSet<string>();
+			foreach(string line in File.ReadAllLines(Path.Combine(extraDataFolder, "npcs.txt"))) {
+				var split = line.Split('\t');
+				if (split[0] == "Ignore") npcNameIgnore.Add(split[2]);
+				else if (split[0] == "Alternate") 
+					foreach(string id in split[1].Split(',')) npcIdIgnore.Add(id);
+				else if (split[0] == "Guard") npcGuardNames.Add(split[2]);
+			}
+
+
+			var npcCounts = new Dictionary<string, int>();
+            var npcNames = new Dictionary<string, string>();
+            var npcClasses = new Dictionary<string, string>();
 
 
 			foreach (string espPath in espPaths) {
@@ -264,11 +321,20 @@ namespace SmallScripts {
 						}
 					} else if (form.Str("type") == "Npc") {
 						if (form["data"]["stats"] != null && form["data"]["stats"].Int("health") == 0) continue;
-
+						
 						string npcId = form.Str("id");
-						if (form.Str("class") == "Slave") slaveIds.Add(npcId);
+						string npcName = form.Str("name");
 
-						if (form["ai_data"].Int("fight") > 70) {
+						if (npcIdIgnore.Contains(npcId)) continue;
+						if (npcNameIgnore.Contains(npcName)) continue;
+
+						npcNames[npcId] = npcName;
+                        npcClasses[npcId] = form.Str("class");
+
+
+                        if (form.Str("class") == "Slave") slaveIds.Add(npcId);
+
+						if (form["ai_data"].Int("fight") >= 71) {
 							npcsHostile.Add(npcId);
 						} else {
 							npcs.Add(npcId);
@@ -289,41 +355,146 @@ namespace SmallScripts {
 					foreach (JObject reference in (JArray)cell["references"]) {
 						string refId = reference.Str("id");
 						if (npcs.Contains(refId)) {
-							info.npcCount++;
-							if (!slaveIds.Contains(refId)) info.onlyNpcsAreEnslaved = false;
+
+                            if (!slaveIds.Contains(refId)) info.onlyNpcsAreEnslaved = false;
+
+                            if (npcGuardNames.Contains(npcNames[refId]))
+								info.guardCount++;
+							else
+								info.npcCount++;
+
+							if(!info.ignore) {
+                                string npcCountName = $"{npcNames[refId]}@{npcClasses[refId]}";
+                                if (!npcCounts.ContainsKey(npcCountName)) npcCounts[npcCountName] = 1;
+                                else npcCounts[npcCountName]++;
+                            }
+
+                            
 
 						} else if (npcsHostile.Contains(refId)) info.hostileCount++;
 					}
 				}
 
-				//foreach (string group in groupInfo.Keys) {
-				//	Console.WriteLine(groupInfo[group]);
-				//}
-
 				foreach (int i in exteriors) {
 					var cell = esp[i];
 					foreach (JObject reference in (JArray)cell["references"]) {
 						string refId = reference.Str("id");
-						if (reference["destination"] == null) continue;
-						string destination = reference["destination"].Str("cell");
-						if (!interiors.ContainsKey(destination)) continue;
-						string destinationGroup = GetCellGroup(destination);
+						if (reference["destination"] != null) {
+                            string destination = reference["destination"].Str("cell");
+                            if (!interiors.ContainsKey(destination)) continue;
+                            string destinationGroup = GetCellGroup(destination);
 
-						JArray coords = (JArray)reference["translation"];
-						float x = coords[0].Value<float>(); //if (x < minX || x > maxX) continue;
-						float y = coords[1].Value<float>(); //if (y < minY || y > maxY) continue;
-						groupInfo[destinationGroup].doorPositions.Add(new Vector2() { x = x, y = y });
+                            JArray coords = (JArray)reference["translation"];
+							var doorPos = new Vector2(coords[0].Value<float>(), coords[1].Value<float>());
+                            groupInfo[destinationGroup].doorPositions.Add(doorPos);
+
+							var cellCoords = doorPos.ToCell();
+
+							if (!doorRefs.ContainsKey(cellCoords)) doorRefs[cellCoords] = new List<(Vector2, string)>();
+							doorRefs[cellCoords].Add((doorPos, destination));
+
+                        } else if (npcs.Contains(refId)) {
+
+                            string npcCountName = $"{npcNames[refId]}@{npcClasses[refId]}";
+                            if (!npcCounts.ContainsKey(npcCountName)) npcCounts[npcCountName] = 1;
+                            else npcCounts[npcCountName]++;
+
+                            JArray coords = (JArray)reference["translation"];
+                            var pos = new Vector2(coords[0].Value<float>(), coords[1].Value<float>());
+							npcRefs.Add((pos, refId));
+						}
+                    }
+				}
+
+				if(mode == PopulationDumpMode.DuplicateNpcs) {
+                    foreach (string npc in npcCounts.Keys) {
+                        int i = npcCounts[npc];
+                        if (i < 2) continue;
+						StringBuilder s = new StringBuilder($"{npc}@{i}");
+						string name = npc.Split('@')[0];
+						//wtf is a big-O
+                        foreach(string npcId in npcNames.Keys) 
+							if (npcNames[npcId] == name) {
+								s.Append('@'); s.Append(npcId);
+						}
+						Console.WriteLine(s.ToString());
+                    }
+					return;
+                }
+
+
+
+                string closestCell = "NONE";
+                float defaultSearchDist = 3250;
+
+				if(mode == PopulationDumpMode.ExteriorNpcMap) {
+                    foreach (var group in groupInfo.Values) {
+                        if (group.parent != "" || group.doorPositions.Count == 0) continue;
+                        string gameplayType = group.gameplayType == "Dungeon" ? "d" : "s";
+                        var mapPos = group.MergePosition().MapPosition();
+                        if (group.district == "Solstheim") mapPos += new Vector2(640, -128);
+                        Console.WriteLine($"<div class=\"group {gameplayType}\" style=\"left:{(int)(mapPos.x + 0.5)};top:{(int)(mapPos.y + 0.5)};\" title=\"{group.name}\"></div>");
+                    }
+                }
+
+                foreach (var npc in npcRefs) {
+
+					bool foundOverride = false;
+
+					(int x, int y) cell = npc.pos.ToCell();
+					float findDist = float.MaxValue;
+                    for (int searchY = cell.y - 1; searchY <= cell.y + 1; searchY++) {
+                        for (int searchX = cell.x - 1; searchX <= cell.x + 1; searchX++) {
+                            if (doorRefs.ContainsKey((searchX, searchY))) {
+                                foreach (var door in doorRefs[(searchX, searchY)]) {
+                                    float dist = (npc.pos - door.pos).LengthSquared();
+                                    if (dist < findDist) {
+                                        var group = groupInfo[GetCellGroup(door.cell, groupInfo)];
+										if (group.gameplayType == "Dungeon" || group.ignore) continue;
+										if (group.npcSearchOverride > 0) {
+											if (dist > (group.npcSearchOverride * group.npcSearchOverride)) continue;
+											foundOverride = true;
+										}
+                                        findDist = dist;
+										closestCell = door.cell;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    string foundType = "notfound";
+					if(findDist < defaultSearchDist * defaultSearchDist || foundOverride) {
+						var group = groupInfo[GetCellGroup(closestCell, groupInfo)];
+
+                        if (!slaveIds.Contains(npc.id)) group.onlyNpcsAreEnslaved = false;
+
+                        if (npcGuardNames.Contains(npcNames[npc.id]))
+                            group.guardCount++;
+                        else
+                            group.npcCount++;
+						foundType = group.gameplayType == "Dungeon" ? "dungeon" : "settlement";
+					}
+                    
+					if(mode == PopulationDumpMode.ExteriorNpcMap) {
+						string titleText = closestCell == "NONE" ? "" : $"{npc.id} - {closestCell}|{(int)(Math.Sqrt(findDist))}";
+						var mapPos = npc.pos.MapPosition();
+						//AAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                        if (groupInfo[GetCellGroup(closestCell, groupInfo)].district == "Solstheim") mapPos += new Vector2(640, -128);
+                        Console.WriteLine($"<div class=\"npc {foundType}\" style=\"left:{(int)(mapPos.x + 0.5)};top:{(int)(mapPos.y + 0.5)};\" title=\"{titleText}\"></div>");
 					}
 				}
 
-				foreach (string group in groupInfo.Keys) {
-					//Console.WriteLine(groupInfo[group]);
-
-					var info = groupInfo[group];
-					if (info.ignore || info.doorPositions.Count == 0 || info.parent != "" || info.npcCount <= 0 || info.onlyNpcsAreEnslaved) continue;
-					Console.WriteLine(groupInfo[group].MapPopulationCircle());
-
+				foreach (var info in groupInfo.Values) {
+					if(mode == PopulationDumpMode.GroupTable) {
+                        Console.WriteLine(info);
+                    } else if (mode == PopulationDumpMode.GroupPopulationMap) {
+                        if (info.ignore || info.doorPositions.Count == 0 || info.parent != "" || (info.npcCount + info.guardCount) <= 0 || info.onlyNpcsAreEnslaved) continue;
+                        Console.WriteLine(info.MapPopulationCircle());
+                    }
 				}
+
+
 
 			}
 
@@ -438,10 +609,10 @@ namespace SmallScripts {
 						if (((JArray)form["references"]).Count == 0) continue;
 						string[] words = cell.name.Split(',', ':');
 
+						
 
-
-						cell.group = words[0];
-						if (!groupCounts.ContainsKey(cell.group)) groupCounts[cell.group] = 1;
+						cell.group = GetCellGroup(cell.name);
+                        if (!groupCounts.ContainsKey(cell.group)) groupCounts[cell.group] = 1;
 						else groupCounts[cell.group]++;
 
 						if (words.Length > 1) {
