@@ -5,9 +5,13 @@ using System.Text;
 namespace SmallScripts {
     public static class Util {
         public static int Int(this JToken obj) { return obj.Value<int>(); }
+        public static int Int(this JToken obj, string s) { return obj[s].Value<int>(); }
+
         public static float Float(this JToken obj) { return obj.Value<float>(); }
 
         public static string Str(this JToken obj, string s) { return obj[s].Value<string>(); }
+
+        public static string Id(this JToken obj) { return obj["id"].Value<string>(); }
 
         public static string Str(this JToken obj) { return obj.Value<string>(); }
 

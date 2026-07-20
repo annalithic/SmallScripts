@@ -133,6 +133,7 @@ namespace SmallScripts {
 
 
         static void Main(string[] args) {
+            TES3.PopulationNew(TES3.PopulationDumpMode.QuestlineMap, @"E:\Extracted\Morrowind\NEW_CELL_DATA", @"E:\Extracted\Morrowind\trhistory\26.07.13.TR_Mainland_DEV.json"); return;
 
             TES3.PopulationNew(TES3.PopulationDumpMode.GroupPopulationMap, @"E:\Extracted\Morrowind\NEW_CELL_DATA\vanilla", @"E:\Extracted\Morrowind\Bloodmoon.json"); return;
 
@@ -142,7 +143,6 @@ namespace SmallScripts {
             //TES3.ListCellsNew(@"E:\Extracted\Morrowind\morrowind.json"); return;
             TES3.PopulationNew(TES3.PopulationDumpMode.GroupPopulationMap, @"E:\Extracted\Morrowind\NEW_CELL_DATA\vanilla", @"E:\Extracted\Morrowind\morrowind.json");
 			Console.WriteLine();
-            TES3.PopulationNew(TES3.PopulationDumpMode.GroupPopulationMap, @"E:\Extracted\Morrowind\NEW_CELL_DATA", @"E:\Extracted\Morrowind\trhistory\26.07.13.TR_Mainland_DEV.json"); return;
 
 
             

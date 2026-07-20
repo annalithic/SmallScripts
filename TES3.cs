@@ -256,7 +256,8 @@ namespace SmallScripts {
 			DuplicateNpcs,
 			GroupTable,
 			GroupPopulationMap,
-			ExteriorNpcMap
+			ExteriorNpcMap,
+			QuestlineMap
 		}
 		public static void PopulationNew(PopulationDumpMode mode, string extraDataFolder, params string[] espPaths) {
 
@@ -420,6 +421,66 @@ namespace SmallScripts {
 						Console.WriteLine(s.ToString());
                     }
 					return;
+                }
+
+				if(mode == PopulationDumpMode.QuestlineMap) {
+
+					var factions = new Dictionary<string, (string name, string shape, string colour)>();
+                    foreach (string line in File.ReadAllLines(Path.Combine(extraDataFolder, "factions.txt"))) {
+                        var words = line.Split('\t');
+                        factions[words[0]] = (words[1], words[2], words[3]);
+                    }
+
+					var markers = new Dictionary<string, Vector2>();
+					foreach(string line in File.ReadAllLines(Path.Combine(extraDataFolder, "markers.txt"))) {
+						var words = line.Split('\t');
+						markers[words[1]] = new Vector2(float.Parse(words[2]), float.Parse(words[3]));
+					}
+
+					var locationQuestlines = new Dictionary<string, HashSet<(string faction, string year, string update)>>();
+
+					foreach(string line in File.ReadAllLines(Path.Combine(extraDataFolder, "questlines.txt"))) {
+						var words = line.Split('\t');
+						string location = words[2];
+
+
+						if (!locationQuestlines.ContainsKey(location)) locationQuestlines[location] = new HashSet<(string, string, string)>();
+						locationQuestlines[location].Add((words[3], words[0], words[1]));
+
+						string title = $"{location} {words[3]} - {words[1]} ({words[0]})";
+						
+					}
+					
+
+					foreach(string location in locationQuestlines.Keys) {
+
+						int questlineCount = 0;
+						int redCount = 0;
+						int greenCount = 0;
+                        var position = new Vector2();
+                        if (groupInfo.ContainsKey(location)) position = groupInfo[location].MergePosition().MapPosition();
+                        else if (markers.ContainsKey(location)) position = markers[location] / 2;
+                        else Console.WriteLine(location + " MISSING MARKER");
+
+						//asdfgkjahagkhi
+						foreach(var factionID in factions.Keys) {
+                            foreach (var questline in locationQuestlines[location]) {
+								if (questline.faction != factionID) continue;
+                                var faction = factions[questline.faction];
+
+								float yOffset = (locationQuestlines[location].Count - 1) * -16;
+
+                                string _class = $"QUEST {faction.shape} {faction.colour}";
+                                string title = $"{location} {faction.name} - {questline.update} ({questline.year})";
+                                Console.WriteLine($"<div class=\"{_class}\" style=\"left:{(int)(position.x + 0.5)};top:{(int)(position.y + 0.5 + questlineCount * 32 + yOffset)};\" title=\"{title}\"></div>");
+                                questlineCount++;
+                            }
+
+                        }
+
+                    }
+
+                    return;
                 }
 
 
